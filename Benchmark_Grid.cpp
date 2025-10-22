@@ -21,9 +21,16 @@
 
 #include "Common.hpp"
 #include "json.hpp"
+#include "Instantiation/Sp4Fund/Implementation.hpp"
+#include "Instantiation/Sp4TwoIndexAntiSymmetric/Implementation.hpp"
 #include <Grid/Grid.h>
+#include <Grid/qcd/action/fermion/DomainWallFermion.h>
 
 #include <cxxabi.h>
+
+
+const char SU_label[] = "SU";
+const char Sp_label[] = "Sp";
 
 template<typename T>
 std::string getClassName()
@@ -40,6 +47,39 @@ using namespace Grid;
 int NN_global;
 
 nlohmann::json json_results;
+
+
+template<int Nc>
+void Sp4_Fund_to_TwoIndexAntiSym(Lattice<iVector<iScalar<iMatrix<vComplexD, GaugeGroupTwoIndex<Nc, AntiSymmetric, GroupName::Sp>::Dimension>>, Nc>> &Uas,
+                                 const Lattice<iVector<iScalar<iMatrix<vComplexD, Nc>>,Nd>> &Uin) {
+  std::cout << GridLogDebug << "Updating TwoIndex representation\n";
+  // Uas is in the TwoIndex antisymmetric representation
+  // Uin is in the fundamental representation
+  // get the U in TwoIndexRep
+  // (U)_{(ij)(lk)} = tr [ adj(e^(ij)) U e^(lk) transpose(U) ]
+  conformable(Uas, Uin);
+  Uas = Zero();
+
+  Lattice<iScalar<iScalar<iMatrix<vComplexD, Nc>>>> tmp(Uin.Grid());
+
+  const int Dimension = GaugeGroupTwoIndex<Nc, AntiSymmetric, GroupName::Sp>::Dimension;
+  std::vector<typename GaugeGroup<Nc, GroupName::Sp>::MatrixD> eij(Dimension);
+
+  for (int a = 0; a < Dimension; a++)
+    GaugeGroupTwoIndex<Nc, AntiSymmetric, GroupName::Sp>::base(a, eij[a]);
+
+  for (int mu = 0; mu < Nd; mu++) {
+    auto Uin_mu = peekLorentz(Uin, mu);
+    auto U_mu = peekLorentz(Uas, mu);
+    for (int a = 0; a < Dimension; a++) {
+      tmp = transpose(Uin_mu) * adj(eij[a]) * Uin_mu;
+      for (int b = 0; b < Dimension; b++) {
+        pokeColour(U_mu, trace(tmp * eij[b]), a, b);
+      }
+    }
+    pokeLorentz(Uas, U_mu, mu);
+  }
+}
 
 // NOTE: Grid::GridClock is just a typedef to
 // `std::chrono::high_resolution_clock`, but `Grid::usecond` rounds to
@@ -552,7 +592,7 @@ class Benchmark
   {
     const int Nwarmup = 50;
     const int Nc4 = 4;
-    typedef Lattice<iMatrix<vComplexF, Nc4>> LatticeSU4;
+    typedef Lattice<iMatrix<vComplexF, 4>> LatticeSU4;
 
     Coordinate simd_layout = GridDefaultSimd(Nd, vComplexF::Nsimd());
     Coordinate mpi_layout = GridDefaultMpi();
@@ -615,22 +655,26 @@ class Benchmark
     }
   };
 
-  template<typename Action>
+  template<typename Action, int Nc_>
   struct ActionFactory
   {
-    typedef typename Action::GaugeField GaugeField;
-    static auto create(GaugeField& Umu, GridCartesian* Grid4D, GridRedBlackCartesian* RbGrid4D, GridCartesian* Grid5D, GridRedBlackCartesian* RbGrid5D)
+    static const int Nc = Nc_;
+    static const int dim_rep = Action::Dimension;
+    typedef Lattice<iVector<iScalar<iMatrix<typename Action::Simd, Action::Dimension>>, Nd>> RepresentedGaugeField;
+    static auto create(RepresentedGaugeField& Umu, GridCartesian* Grid4D, GridRedBlackCartesian* RbGrid4D, GridCartesian* Grid5D, GridRedBlackCartesian* RbGrid5D)
     {
       static_assert(!std::is_same_v<Action,Action>, "create is not defined for provided Action");
     }
   };
 
-  template<typename Impl>
-  struct ActionFactory<DomainWallFermion<Impl>>
+  template<typename Impl, int Nc_>
+  struct ActionFactory<DomainWallFermion<Impl>, Nc_>
   {
+    static const int Nc = Nc_;
     typedef DomainWallFermion<Impl> Action;
-    typedef typename Action::GaugeField GaugeField;
-    static auto create(GaugeField& Umu, GridCartesian* Grid4D, GridRedBlackCartesian* RbGrid4D, GridCartesian* Grid5D, GridRedBlackCartesian* RbGrid5D)
+    static const int dim_rep = Action::Dimension;
+    typedef Lattice<iVector<iScalar<iMatrix<typename Action::Simd, Action::Dimension>>, Nd>> RepresentedGaugeField;
+    static auto create(RepresentedGaugeField& Umu, GridCartesian* Grid4D, GridRedBlackCartesian* RbGrid4D, GridCartesian* Grid5D, GridRedBlackCartesian* RbGrid5D)
     {
       RealD mass = 0.1;
       RealD M5 = 1.8;
@@ -642,22 +686,23 @@ class Benchmark
       // 1344= 3*(2*8+6)*2*8 + 8*3*2*2 + 3*4*2*8
       // 1344 = Nc* (6+(Nc-1)*8)*2*Nd + Nd*Nc*2*2  + Nd*Nc*Ns*2
       //	double flops=(1344.0*volume)/2;
-      int Nc_ = Action::Dimension;
       #if 0
         double fps = Nc* (6+(Nc-1)*8)*Ns*Nd + Nd*Nc*Ns  + Nd*Nc*Ns*2;
       #else
-        return  Nc_ * (6 + (Nc_ - 1) * 8) * Ns * Nd + 2 * Nd * Nc_ * Ns + 2 * Nd * Nc_ * Ns * 2;
+        return  dim_rep * (6 + (dim_rep - 1) * 8) * Ns * Nd + 2 * Nd * dim_rep * Ns + 2 * Nd * dim_rep * Ns * 2;
       #endif
     }
     static std::string name() { return "DWF"; }
   };
 
-  template<typename Impl>
-  struct ActionFactory<ImprovedStaggeredFermion<Impl>>
+  template<typename Impl, int Nc_>
+  struct ActionFactory<ImprovedStaggeredFermion<Impl>, Nc_>
   {
+    static const int Nc = Nc_;
     typedef ImprovedStaggeredFermion<Impl> Action;
-    typedef typename Action::GaugeField GaugeField;
-    static auto create(GaugeField& Umu, GridCartesian* Grid4D, GridRedBlackCartesian* RbGrid4D, GridCartesian* Grid5D, GridRedBlackCartesian* RbGrid5D)
+    static const int dim_rep = Action::Dimension;
+    typedef Lattice<iVector<iScalar<iMatrix<typename Action::Simd, Action::Dimension>>, Nd>> RepresentedGaugeField;
+    static auto create(RepresentedGaugeField& Umu, GridCartesian* Grid4D, GridRedBlackCartesian* RbGrid4D, GridCartesian* Grid5D, GridRedBlackCartesian* RbGrid5D)
     {
       RealD mass = 0.1;
       RealD c1 = 9.0 / 8.0;
@@ -668,7 +713,6 @@ class Benchmark
     }
     static double fps()
     {
-      constexpr int Nc_ = Action::Dimension;
       if constexpr (Nc_ != 3)
       {
         static_assert(!std::is_same_v<Action,Action>, "Nc!=3 is not supported for ImprovedStaggered");
@@ -696,7 +740,7 @@ class Benchmark
     }
   }
 
-  template<typename Action>
+  template<typename Action, int Nc, const char* groupFamily>
   static double DoeFlops(int Ls, int L)
   {
     double gflops;
@@ -723,9 +767,13 @@ class Benchmark
 
     ///////// Welcome message ////////////
     grid_big_sep();
-    std::cout << GridLogMessage << "Benchmark " << ActionFactory<Action>::name() << " on " << L << "^4 local volume "
+    std::cout << GridLogMessage << "Benchmark " << groupFamily << "(" << Nc << ") " << ActionFactory<Action, Nc>::name() << " on " << L << "^4 local volume "
               << std::endl;
-    std::cout << GridLogMessage << "* Nc             : " << Action::Dimension << std::endl;
+    std::cout << GridLogMessage << "* Group family   : " << groupFamily << std::endl;
+    std::cout << GridLogMessage << "* Nc             : " << Nc << std::endl;
+    std::cout << GridLogMessage << "* Representation : "
+	      << ((ActionFactory<Action, Nc>::dim_rep == Nc) ? "Fundamental" : "TwoIndexAntisymmetric")
+	      << std::endl;
     std::cout << GridLogMessage
               << "* Global volume  : " << GridCmdVectorIntToString(latt4) << std::endl;
     if (Ls > 0) std::cout << GridLogMessage << "* Ls             : " << Ls << std::endl;
@@ -774,11 +822,20 @@ class Benchmark
     std::cout << GridLogMessage << "Initialised RNGs" << std::endl;
 
     typedef typename Action::FermionField Fermion;
-    typedef typename Action::GaugeField   Gauge;
+    typedef Lattice<iVector<iScalar<iMatrix<typename Action::Simd, Action::Dimension>>, Nd>> RepresentedGaugeField;
+    typedef Lattice<iVector<iScalar<iMatrix<typename Action::Simd, Nc>>, Nd>> FundamentalGaugeField;
 
     ///////// Source preparation ////////////
-    Gauge Umu(UGrid);
-    SU<Action::Dimension>::HotConfiguration(RNG4, Umu);
+    RepresentedGaugeField* Umu;
+    FundamentalGaugeField Umu_fund(UGrid);
+
+    SU<Nc>::HotConfiguration(RNG4, Umu_fund);
+    if constexpr (Nc != Action::Dimension) {
+      Umu = new RepresentedGaugeField(UGrid);
+      Sp4_Fund_to_TwoIndexAntiSym(*Umu, Umu_fund);
+    } else {
+      Umu = &Umu_fund;
+    }
     Fermion src(FGrid);
     random(*FRNG, src);
     Fermion src_e(FrbGrid);
@@ -786,7 +843,7 @@ class Benchmark
     Fermion r_e(FrbGrid);
     Fermion r_o(FrbGrid);
     Fermion r_eo(FGrid);
-    Action action = ActionFactory<Action>::create(Umu, UGrid, UrbGrid, FGrid, FrbGrid);
+    Action action = ActionFactory<Action, Nc>::create(*Umu, UGrid, UrbGrid, FGrid, FrbGrid);
 
     {
 
@@ -851,7 +908,7 @@ class Benchmark
         for (int mu = 0; mu < Nd; mu++)
           volume = volume * latt4[mu];
 
-        double fps   = ActionFactory<Action>::fps();
+        double fps   = ActionFactory<Action, Nc>::fps();
         double flops = (fps * volume) / 2.;
         double gf_hi, gf_lo, gf_err;
 
@@ -897,6 +954,9 @@ class Benchmark
       }
       std::cout << std::endl;
     }
+    if constexpr (Nc != Action::Dimension) {
+      free(Umu);
+    }
     return gflops_best;
   }
 };
@@ -909,6 +969,8 @@ int main(int argc, char **argv)
   bool do_memory = true;
   bool do_comms = true;
   bool do_flops = true;
+  bool do_sp4_fund = true;
+  bool do_sp4_2as = true;
 
   // NOTE: these two take O((number of ranks)^2) time, which might be a lot, so they are
   // off by default
@@ -934,6 +996,11 @@ int main(int argc, char **argv)
       do_latency = true;
     if (arg == "--benchmark-p2p")
       do_p2p = true;
+    if (arg == "--benchmark-sp4-fund")
+      do_sp4_fund = true;
+    if (arg == "--benchmark-sp4-2as")
+      do_sp4_2as = true;
+
     if (arg == "--no-benchmark-su4")
       do_su4 = false;
     if (arg == "--no-benchmark-memory")
@@ -946,6 +1013,10 @@ int main(int argc, char **argv)
       do_latency = false;
     if (arg == "--no-benchmark-p2p")
       do_p2p = false;
+    if (arg == "--no-benchmark-sp4-fund")
+      do_sp4_fund = false;
+    if (arg == "--no-benchmark-sp4-2as")
+      do_sp4_2as = false;
     if (arg == "--max-L")
     {
       // Make sure there's another argument to parse
@@ -1030,6 +1101,10 @@ int main(int argc, char **argv)
   std::vector<double> dwf4f;
   std::vector<double> dwf4d;
   std::vector<double> staggered;
+  std::vector<double> sp4_wilson_fund;
+  std::vector<double> sp4_dwf_fund;
+  std::vector<double> sp4_wilson_2as;
+  std::vector<double> sp4_dwf_2as;
 
   auto runBenchmark = [](const std::string& name, const std::function<void(void)>& fn)
   {
@@ -1052,21 +1127,61 @@ int main(int argc, char **argv)
     std::cout << GridLogMessage << " fp32 Wilson dslash 4D vectorised" << std::endl;
     for (int l = 0; l < L_list.size(); l++)
     {
-      wilsonf.push_back(Benchmark::DoeFlops<DomainWallFermionF>(1, L_list[l]));
+      wilsonf.push_back(Benchmark::DoeFlops<DomainWallFermionF, 3, SU_label>(1, L_list[l]));
+    }
+
+    if (do_sp4_fund)
+    {
+      grid_big_sep();
+      std::cout << GridLogMessage << " Sp4 fundamental Wilson dslash 4D vectorised" << std::endl;
+      for (int l = 0; l < L_list.size(); l++)
+      {
+        sp4_wilson_fund.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4FundWilsonImplD>, 4, Sp_label>(1, L_list[l]));
+      }
+    }
+
+    if (do_sp4_2as)
+    {
+      grid_big_sep();
+      std::cout << GridLogMessage << " Sp4 two-index antisymmetric Wilson dslash 4D vectorised" << std::endl;
+      for (int l = 0; l < L_list.size(); l++)
+      {
+        sp4_wilson_2as.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4TwoIndexAntiSymmetricWilsonImplD>, 4, Sp_label>(1, L_list[l]));
+      }
+    }
+
+    if (do_sp4_fund)
+    {
+      grid_big_sep();
+      std::cout << GridLogMessage << " Sp4 fundamental Domain wall dslash 4D vectorised" << std::endl;
+      for (int l = 0; l < L_list.size(); l++)
+      {
+        sp4_dwf_fund.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4FundWilsonImplD>, 4, Sp_label>(Ls, L_list[l]));
+      }
+    }
+
+    if (do_sp4_2as)
+    {
+      grid_big_sep();
+      std::cout << GridLogMessage << " Sp4 two-index antisymmetric Domain wall dslash 4D vectorised" << std::endl;
+      for (int l = 0; l < L_list.size(); l++)
+      {
+        sp4_dwf_2as.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4TwoIndexAntiSymmetricWilsonImplD>, 4, Sp_label>(Ls, L_list[l]));
+      }
     }
 
     grid_big_sep();
     std::cout << GridLogMessage << " fp64 Wilson dslash 4D vectorised" << std::endl;
     for (int l = 0; l < L_list.size(); l++)
     {
-      wilsond.push_back(Benchmark::DoeFlops<DomainWallFermionD>(1, L_list[l]));
+      wilsond.push_back(Benchmark::DoeFlops<DomainWallFermionD, 3, SU_label>(1, L_list[l]));
     }
 
     grid_big_sep();
     std::cout << GridLogMessage << " fp32 Domain wall dslash 4D vectorised" << std::endl;
     for (int l = 0; l < L_list.size(); l++)
     {
-      double result = Benchmark::DoeFlops<DomainWallFermionF>(Ls, L_list[l]);
+      double result = Benchmark::DoeFlops<DomainWallFermionF, 3, SU_label>(Ls, L_list[l]);
       dwf4f.push_back(result);
     }
 
@@ -1074,7 +1189,7 @@ int main(int argc, char **argv)
     std::cout << GridLogMessage << " fp64 Domain wall dslash 4D vectorised" << std::endl;
     for (int l = 0; l < L_list.size(); l++)
     {
-      double result = Benchmark::DoeFlops<DomainWallFermionD>(Ls, L_list[l]);
+      double result = Benchmark::DoeFlops<DomainWallFermionD, 3, SU_label>(Ls, L_list[l]);
       dwf4d.push_back(result);
     }
 
@@ -1083,7 +1198,7 @@ int main(int argc, char **argv)
               << std::endl;
     for (int l = 0; l < L_list.size(); l++)
     {
-      double result = Benchmark::DoeFlops<ImprovedStaggeredFermionF>(0, L_list[l]);
+      double result = Benchmark::DoeFlops<ImprovedStaggeredFermionF, 3, SU_label>(0, L_list[l]);
       staggered.push_back(result);
     }
 
@@ -1092,14 +1207,16 @@ int main(int argc, char **argv)
     grid_big_sep();
     std::cout << GridLogMessage << "Gflop/s/node Summary table Ls=" << Ls << std::endl;
     grid_big_sep();
-    grid_printf("%5s %12s %12s %12s %12s %12s\n", "L", "WilsonF", "WilsonD", "DWFF", "DWFD", "Staggered");
+    grid_printf("%5s %12s %12s %12s %12s %12s %12s %12s\n", "L", "WilsonF", "WilsonD", "DWFF", "DWFD", "Staggered", "Sp4WilsonFun", "Sp4DWF2AS");
     nlohmann::json tmp_flops;
     for (int l = 0; l < L_list.size(); l++)
     {
-      grid_printf("%5d %12.2f %12.2f %12.2f %12.2f %12.2f\n", L_list[l],
+      grid_printf("%5d %12.2f %12.2f %12.2f %12.2f %12.2f %12.2f %12.2f\n", L_list[l],
                   wilsonf[l] / NN, wilsond[l] / NN,
                   dwf4f[l] / NN, dwf4d[l] / NN,
-                  staggered[l] / NN);
+                  staggered[l] / NN,
+		  sp4_wilson_fund[l] / NN,
+		  sp4_dwf_2as[l] / NN);
 
       nlohmann::json tmp;
       tmp["L"] = L_list[l];
@@ -1108,6 +1225,10 @@ int main(int argc, char **argv)
       tmp["Gflops_wilsond"] = wilsond[l] / NN;
       tmp["Gflops_dwf4d"] = dwf4d[l] / NN;
       tmp["Gflops_staggered"] = staggered[l] / NN;
+      tmp["Gflops_sp4_wilson_fund"] = sp4_wilson_fund[l] / NN;
+      tmp["Gflops_sp4_dwf_fund"] = sp4_dwf_fund[l] / NN;
+      tmp["Gflops_sp4_wilson_2as"] = sp4_wilson_2as[l] / NN;
+      tmp["Gflops_sp4_dwf_f2as"] = sp4_dwf_2as[l] / NN;
       tmp_flops["results"].push_back(tmp);
     }
     grid_big_sep();
