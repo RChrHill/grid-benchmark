@@ -955,7 +955,7 @@ class Benchmark
       std::cout << std::endl;
     }
     if constexpr (Nc != Action::Dimension) {
-      free(Umu);
+      delete Umu;
     }
     return gflops_best;
   }
