@@ -29,9 +29,6 @@
 #include <cxxabi.h>
 
 
-const char SU_label[] = "SU";
-const char Sp_label[] = "Sp";
-
 template<typename T>
 std::string getClassName()
 {
@@ -49,9 +46,105 @@ int NN_global;
 nlohmann::json json_results;
 
 
+/* Grid's template types for actions and representations do not expose template parameters and attributes that we require.
+   Here we forcibly expose them via the template system. */
+template<typename Impl>
+struct getRepresentation
+{
+  static_assert(!std::is_same_v<Impl,Impl>, "getRepresentation undefined for given type");
+};
+
+template<typename S, typename Representation, typename Options>
+struct getRepresentation<WilsonImpl<S, Representation, Options>>
+{
+  typedef Representation type;
+};
+
+template<typename S, typename Representation>
+struct getRepresentation<StaggeredImpl<S, Representation>>
+{
+  typedef Representation type;
+};
+
+template<typename Action>
+struct getActionRepresentation
+{
+  typedef typename getRepresentation<typename Action::Impl_t>::type type;
+};
+
+template<typename groupName_>
+struct groupNameStr {
+  static_assert(!std::is_same_v<groupName_, groupName_>, "groupNameStr undefined for given type");
+};
+
+template<>
+struct groupNameStr<GroupName::SU> {
+  static std::string value;
+};
+std::string groupNameStr<GroupName::SU>::value = "SU";
+
+template<>
+struct groupNameStr<GroupName::Sp> {
+  static std::string value;
+};
+std::string groupNameStr<GroupName::Sp>::value = "Sp";
+
+
+template<typename Representation>
+struct getGroupInfo
+{
+  static_assert(!std::is_same_v<Representation, Representation>, "getGroupInfo undefined for given type");
+};
+
+template<int Nc_, typename groupName_>
+struct getGroupInfo<FundamentalRep<Nc_, groupName_>>
+{
+  static constexpr int Nc = Nc_;
+  typedef GaugeGroup<Nc_, groupName_> group;
+  static inline std::string getRepresentationName() {
+    return "Fundamental";
+  }
+  static const std::string groupName;
+};
+
+template<int Nc_, typename groupName_>
+const std::string getGroupInfo<FundamentalRep<Nc_, groupName_>>::groupName = groupNameStr<groupName_>::value;
+
+template<int Nc_, TwoIndexSymmetry S_, typename groupName_>
+struct getGroupInfo<TwoIndexRep<Nc_, S_, groupName_>>
+{
+  static constexpr int Nc = Nc_;
+  typedef GaugeGroupTwoIndex<Nc_, S_, groupName_> group;
+  static inline std::string getRepresentationName() {
+    if constexpr (S_ == Grid::Symmetric) {
+	return "Two-Index Symmetric";
+      }
+    else if constexpr (S_ == Grid::AntiSymmetric) {
+	return "Two-Index Antisymmetric";
+      }
+    else {
+      static_assert(!std::is_same_v<groupName_, groupName_>, "Unrecognised TwoIndexSymmetry");
+    }
+  }
+  static const std::string groupName;
+};
+
+template<int Nc_, TwoIndexSymmetry S_, typename groupName_>
+const std::string getGroupInfo<TwoIndexRep<Nc_, S_, groupName_>>::groupName = groupNameStr<groupName_>::value;
+
+
+/* Type aliases because Grid's built-in ones are hard-coded to the configure-time Nc */
+template<typename Simd, int dimension>
+using GeneralGaugeField = Lattice<iVector<iScalar<iMatrix<Simd, dimension>>, Nd>>;
+
+template<typename Simd, int dimension>
+using GeneralLinkField = Lattice<iScalar<iScalar<iMatrix<Simd, dimension>>>>;
+
+
+/* Reimplement projection to higher representation because Grid's built-in one is hardcoded to configure-time Nc */
 template<int Nc>
-void Sp4_Fund_to_TwoIndexAntiSym(Lattice<iVector<iScalar<iMatrix<vComplexD, GaugeGroupTwoIndex<Nc, AntiSymmetric, GroupName::Sp>::Dimension>>, Nc>> &Uas,
-                                 const Lattice<iVector<iScalar<iMatrix<vComplexD, Nc>>,Nd>> &Uin) {
+void Sp4_Fund_to_TwoIndexAntiSym(GeneralGaugeField<vComplexD, GaugeGroupTwoIndex<Nc, AntiSymmetric, GroupName::Sp>::Dimension> &Uas,
+                                 const GeneralGaugeField<vComplexD, Nc> &Uin) {
   std::cout << GridLogDebug << "Updating TwoIndex representation\n";
   // Uas is in the TwoIndex antisymmetric representation
   // Uin is in the fundamental representation
@@ -60,7 +153,7 @@ void Sp4_Fund_to_TwoIndexAntiSym(Lattice<iVector<iScalar<iMatrix<vComplexD, Gaug
   conformable(Uas, Uin);
   Uas = Zero();
 
-  Lattice<iScalar<iScalar<iMatrix<vComplexD, Nc>>>> tmp(Uin.Grid());
+  GeneralLinkField<vComplexD, Nc> tmp(Uin.Grid());
 
   const int Dimension = GaugeGroupTwoIndex<Nc, AntiSymmetric, GroupName::Sp>::Dimension;
   std::vector<typename GaugeGroup<Nc, GroupName::Sp>::MatrixD> eij(Dimension);
@@ -655,25 +748,28 @@ class Benchmark
     }
   };
 
-  template<typename Action, int Nc_>
+  template<typename Action>
   struct ActionFactory
   {
-    static const int Nc = Nc_;
+    typedef getActionRepresentation<Action> Representation;
+    typedef getGroupInfo<Representation> GroupInfo;
     static const int dim_rep = Action::Dimension;
-    typedef Lattice<iVector<iScalar<iMatrix<typename Action::Simd, Action::Dimension>>, Nd>> RepresentedGaugeField;
+    typedef GeneralGaugeField<typename Action::Simd, Action::Dimension> RepresentedGaugeField;
     static auto create(RepresentedGaugeField& Umu, GridCartesian* Grid4D, GridRedBlackCartesian* RbGrid4D, GridCartesian* Grid5D, GridRedBlackCartesian* RbGrid5D)
     {
       static_assert(!std::is_same_v<Action,Action>, "create is not defined for provided Action");
     }
   };
 
-  template<typename Impl, int Nc_>
-  struct ActionFactory<DomainWallFermion<Impl>, Nc_>
+  template<typename Impl>
+  struct ActionFactory<DomainWallFermion<Impl>>
   {
-    static const int Nc = Nc_;
+    typedef typename getRepresentation<Impl>::type Representation;
+    typedef getGroupInfo<Representation> GroupInfo;
+    static const int Nc = GroupInfo::Nc;
     typedef DomainWallFermion<Impl> Action;
     static const int dim_rep = Action::Dimension;
-    typedef Lattice<iVector<iScalar<iMatrix<typename Action::Simd, Action::Dimension>>, Nd>> RepresentedGaugeField;
+    typedef GeneralGaugeField<typename Action::Simd, Action::Dimension> RepresentedGaugeField;
     static auto create(RepresentedGaugeField& Umu, GridCartesian* Grid4D, GridRedBlackCartesian* RbGrid4D, GridCartesian* Grid5D, GridRedBlackCartesian* RbGrid5D)
     {
       RealD mass = 0.1;
@@ -695,13 +791,15 @@ class Benchmark
     static std::string name() { return "DWF"; }
   };
 
-  template<typename Impl, int Nc_>
-  struct ActionFactory<ImprovedStaggeredFermion<Impl>, Nc_>
+  template<typename Impl>
+  struct ActionFactory<ImprovedStaggeredFermion<Impl>>
   {
-    static const int Nc = Nc_;
+    typedef typename getRepresentation<Impl>::type Representation;
+    typedef getGroupInfo<Representation> GroupInfo;
+    static const int Nc = GroupInfo::Nc;
     typedef ImprovedStaggeredFermion<Impl> Action;
     static const int dim_rep = Action::Dimension;
-    typedef Lattice<iVector<iScalar<iMatrix<typename Action::Simd, Action::Dimension>>, Nd>> RepresentedGaugeField;
+    typedef GeneralGaugeField<typename Action::Simd, Action::Dimension> RepresentedGaugeField;
     static auto create(RepresentedGaugeField& Umu, GridCartesian* Grid4D, GridRedBlackCartesian* RbGrid4D, GridCartesian* Grid5D, GridRedBlackCartesian* RbGrid5D)
     {
       RealD mass = 0.1;
@@ -713,7 +811,7 @@ class Benchmark
     }
     static double fps()
     {
-      if constexpr (Nc_ != 3)
+      if constexpr (Nc != 3)
       {
         static_assert(!std::is_same_v<Action,Action>, "Nc!=3 is not supported for ImprovedStaggered");
       }
@@ -740,7 +838,7 @@ class Benchmark
     }
   }
 
-  template<typename Action, int Nc, const char* groupFamily>
+  template<typename Action>
   static double DoeFlops(int Ls, int L)
   {
     double gflops;
@@ -767,13 +865,16 @@ class Benchmark
 
     ///////// Welcome message ////////////
     grid_big_sep();
-    std::cout << GridLogMessage << "Benchmark " << groupFamily << "(" << Nc << ") " << ActionFactory<Action, Nc>::name() << " on " << L << "^4 local volume "
+    typedef typename getActionRepresentation<Action>::type Representation;
+    typedef getGroupInfo<Representation> GroupInfo;
+    const std::string groupFamily = GroupInfo::groupName;
+    const int Nc = GroupInfo::Nc;
+
+    std::cout << GridLogMessage << "Benchmark " << groupFamily << "(" << Nc << ") " << ActionFactory<Action>::name() << " on " << L << "^4 local volume "
               << std::endl;
     std::cout << GridLogMessage << "* Group family   : " << groupFamily << std::endl;
     std::cout << GridLogMessage << "* Nc             : " << Nc << std::endl;
-    std::cout << GridLogMessage << "* Representation : "
-	      << ((ActionFactory<Action, Nc>::dim_rep == Nc) ? "Fundamental" : "TwoIndexAntisymmetric")
-	      << std::endl;
+    std::cout << GridLogMessage << "* Representation : " << GroupInfo::getRepresentationName() << std::endl;
     std::cout << GridLogMessage
               << "* Global volume  : " << GridCmdVectorIntToString(latt4) << std::endl;
     if (Ls > 0) std::cout << GridLogMessage << "* Ls             : " << Ls << std::endl;
@@ -822,8 +923,8 @@ class Benchmark
     std::cout << GridLogMessage << "Initialised RNGs" << std::endl;
 
     typedef typename Action::FermionField Fermion;
-    typedef Lattice<iVector<iScalar<iMatrix<typename Action::Simd, Action::Dimension>>, Nd>> RepresentedGaugeField;
-    typedef Lattice<iVector<iScalar<iMatrix<typename Action::Simd, Nc>>, Nd>> FundamentalGaugeField;
+    typedef GeneralGaugeField<typename Action::Simd, Action::Dimension> RepresentedGaugeField;
+    typedef GeneralGaugeField<typename Action::Simd, Nc> FundamentalGaugeField;
 
     ///////// Source preparation ////////////
     RepresentedGaugeField* Umu;
@@ -843,7 +944,7 @@ class Benchmark
     Fermion r_e(FrbGrid);
     Fermion r_o(FrbGrid);
     Fermion r_eo(FGrid);
-    Action action = ActionFactory<Action, Nc>::create(*Umu, UGrid, UrbGrid, FGrid, FrbGrid);
+    Action action = ActionFactory<Action>::create(*Umu, UGrid, UrbGrid, FGrid, FrbGrid);
 
     {
 
@@ -908,7 +1009,7 @@ class Benchmark
         for (int mu = 0; mu < Nd; mu++)
           volume = volume * latt4[mu];
 
-        double fps   = ActionFactory<Action, Nc>::fps();
+        double fps   = ActionFactory<Action>::fps();
         double flops = (fps * volume) / 2.;
         double gf_hi, gf_lo, gf_err;
 
@@ -1127,7 +1228,7 @@ int main(int argc, char **argv)
     std::cout << GridLogMessage << " fp32 Wilson dslash 4D vectorised" << std::endl;
     for (int l = 0; l < L_list.size(); l++)
     {
-      wilsonf.push_back(Benchmark::DoeFlops<DomainWallFermionF, 3, SU_label>(1, L_list[l]));
+      wilsonf.push_back(Benchmark::DoeFlops<DomainWallFermionF>(1, L_list[l]));
     }
 
     if (do_sp4_fund)
@@ -1136,7 +1237,7 @@ int main(int argc, char **argv)
       std::cout << GridLogMessage << " Sp4 fundamental Wilson dslash 4D vectorised" << std::endl;
       for (int l = 0; l < L_list.size(); l++)
       {
-        sp4_wilson_fund.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4FundWilsonImplD>, 4, Sp_label>(1, L_list[l]));
+        sp4_wilson_fund.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4FundWilsonImplD>>(1, L_list[l]));
       }
     }
 
@@ -1146,7 +1247,7 @@ int main(int argc, char **argv)
       std::cout << GridLogMessage << " Sp4 two-index antisymmetric Wilson dslash 4D vectorised" << std::endl;
       for (int l = 0; l < L_list.size(); l++)
       {
-        sp4_wilson_2as.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4TwoIndexAntiSymmetricWilsonImplD>, 4, Sp_label>(1, L_list[l]));
+        sp4_wilson_2as.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4TwoIndexAntiSymmetricWilsonImplD>>(1, L_list[l]));
       }
     }
 
@@ -1156,7 +1257,7 @@ int main(int argc, char **argv)
       std::cout << GridLogMessage << " Sp4 fundamental Domain wall dslash 4D vectorised" << std::endl;
       for (int l = 0; l < L_list.size(); l++)
       {
-        sp4_dwf_fund.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4FundWilsonImplD>, 4, Sp_label>(Ls, L_list[l]));
+        sp4_dwf_fund.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4FundWilsonImplD>>(Ls, L_list[l]));
       }
     }
 
@@ -1166,7 +1267,7 @@ int main(int argc, char **argv)
       std::cout << GridLogMessage << " Sp4 two-index antisymmetric Domain wall dslash 4D vectorised" << std::endl;
       for (int l = 0; l < L_list.size(); l++)
       {
-        sp4_dwf_2as.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4TwoIndexAntiSymmetricWilsonImplD>, 4, Sp_label>(Ls, L_list[l]));
+        sp4_dwf_2as.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4TwoIndexAntiSymmetricWilsonImplD>>(Ls, L_list[l]));
       }
     }
 
@@ -1174,14 +1275,14 @@ int main(int argc, char **argv)
     std::cout << GridLogMessage << " fp64 Wilson dslash 4D vectorised" << std::endl;
     for (int l = 0; l < L_list.size(); l++)
     {
-      wilsond.push_back(Benchmark::DoeFlops<DomainWallFermionD, 3, SU_label>(1, L_list[l]));
+      wilsond.push_back(Benchmark::DoeFlops<DomainWallFermionD>(1, L_list[l]));
     }
 
     grid_big_sep();
     std::cout << GridLogMessage << " fp32 Domain wall dslash 4D vectorised" << std::endl;
     for (int l = 0; l < L_list.size(); l++)
     {
-      double result = Benchmark::DoeFlops<DomainWallFermionF, 3, SU_label>(Ls, L_list[l]);
+      double result = Benchmark::DoeFlops<DomainWallFermionF>(Ls, L_list[l]);
       dwf4f.push_back(result);
     }
 
@@ -1189,7 +1290,7 @@ int main(int argc, char **argv)
     std::cout << GridLogMessage << " fp64 Domain wall dslash 4D vectorised" << std::endl;
     for (int l = 0; l < L_list.size(); l++)
     {
-      double result = Benchmark::DoeFlops<DomainWallFermionD, 3, SU_label>(Ls, L_list[l]);
+      double result = Benchmark::DoeFlops<DomainWallFermionD>(Ls, L_list[l]);
       dwf4d.push_back(result);
     }
 
@@ -1198,7 +1299,7 @@ int main(int argc, char **argv)
               << std::endl;
     for (int l = 0; l < L_list.size(); l++)
     {
-      double result = Benchmark::DoeFlops<ImprovedStaggeredFermionF, 3, SU_label>(0, L_list[l]);
+      double result = Benchmark::DoeFlops<ImprovedStaggeredFermionF>(0, L_list[l]);
       staggered.push_back(result);
     }
 
