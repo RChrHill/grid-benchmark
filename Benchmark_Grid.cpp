@@ -79,15 +79,13 @@ struct groupNameStr {
 
 template<>
 struct groupNameStr<GroupName::SU> {
-  static std::string value;
+  static constexpr const char* value = "SU";
 };
-std::string groupNameStr<GroupName::SU>::value = "SU";
 
 template<>
 struct groupNameStr<GroupName::Sp> {
-  static std::string value;
+  static constexpr const char* value = "Sp";
 };
-std::string groupNameStr<GroupName::Sp>::value = "Sp";
 
 
 template<typename Representation>
@@ -101,21 +99,19 @@ struct getGroupInfo<FundamentalRep<Nc_, groupName_>>
 {
   static constexpr int Nc = Nc_;
   typedef GaugeGroup<Nc_, groupName_> group;
-  static inline std::string getRepresentationName() {
+  static constexpr const char* getRepresentationName() {
     return "Fundamental";
   }
-  static const std::string groupName;
+  static constexpr const char* groupName = groupNameStr<groupName_>::value;
 };
 
-template<int Nc_, typename groupName_>
-const std::string getGroupInfo<FundamentalRep<Nc_, groupName_>>::groupName = groupNameStr<groupName_>::value;
 
 template<int Nc_, TwoIndexSymmetry S_, typename groupName_>
 struct getGroupInfo<TwoIndexRep<Nc_, S_, groupName_>>
 {
   static constexpr int Nc = Nc_;
   typedef GaugeGroupTwoIndex<Nc_, S_, groupName_> group;
-  static inline std::string getRepresentationName() {
+  static constexpr const char* getRepresentationName() {
     if constexpr (S_ == Grid::Symmetric) {
 	return "Two-Index Symmetric";
       }
@@ -126,11 +122,8 @@ struct getGroupInfo<TwoIndexRep<Nc_, S_, groupName_>>
       static_assert(!std::is_same_v<groupName_, groupName_>, "Unrecognised TwoIndexSymmetry");
     }
   }
-  static const std::string groupName;
+  static constexpr const char* groupName = groupNameStr<groupName_>::value;
 };
-
-template<int Nc_, TwoIndexSymmetry S_, typename groupName_>
-const std::string getGroupInfo<TwoIndexRep<Nc_, S_, groupName_>>::groupName = groupNameStr<groupName_>::value;
 
 
 /* Type aliases because Grid's built-in ones are hard-coded to the configure-time Nc */
