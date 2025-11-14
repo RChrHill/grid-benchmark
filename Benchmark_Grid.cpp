@@ -25,6 +25,7 @@
 #include "Instantiation/Sp4TwoIndexAntiSymmetric/Implementation.hpp"
 #include <Grid/Grid.h>
 #include <Grid/qcd/action/fermion/DomainWallFermion.h>
+#include "instantiation/instantiations.hpp"
 
 #include <cxxabi.h>
 
@@ -832,7 +833,7 @@ class Benchmark
   }
 
   template<typename Action>
-  static double DoeFlops(int Ls, int L)
+  static double DeoFlops(int Ls, int L)
   {
     double gflops;
     double gflops_best = 0;
@@ -1053,6 +1054,82 @@ class Benchmark
     }
     return gflops_best;
   }
+
+  static void checkWilson(void)
+  {
+    int L=8;
+    std::cout << GridLogMessage << "Validating Wilson propagator" << std::endl;
+
+    Grid::Coordinate mpi = GridDefaultMpi();
+    assert(mpi.size() == 4);
+    Coordinate local({L, L, L, L});
+    Coordinate latt4(
+        {local[0] * mpi[0], local[1] * mpi[1], local[2] * mpi[2], local[3] * mpi[3]});
+
+    ///////// Lattice Init ////////////
+    GridCartesian *FGrid = SpaceTimeGrid::makeFourDimGrid(
+        latt4, GridDefaultSimd(Nd, vComplexD::Nsimd()), GridDefaultMpi());
+    GridRedBlackCartesian *FrbGrid = SpaceTimeGrid::makeFourDimRedBlackGrid(FGrid);
+
+    ///////// RNG Init ////////////
+    std::vector<int> seeds({1, 2, 3, 4});
+    GridParallelRNG pRNG(FGrid);
+    pRNG.SeedFixedIntegers(seeds);
+    GridSerialRNG sRNG;
+    sRNG.SeedFixedIntegers(seeds);
+    std::cout << GridLogMessage << "Initialised RNGs" << std::endl;
+
+    ///////// Init Fields /////////
+    LatticeGaugeFieldD Umu(FGrid);
+    SU<Nc>::ColdConfiguration(pRNG,Umu); // Unit gauge
+
+    LatticeFermionD    src(FGrid);
+    gaussian(pRNG,src);
+    LatticeFermionD    tmp(FGrid);
+    LatticeFermionD    ref(FGrid);
+
+    Coordinate point(4,0);
+    src=Zero();
+    SpinColourVectorD ferm;
+    gaussian(sRNG,ferm);
+    pokeSite(ferm,src,point);
+
+    RealD mass = 0.01;
+    WilsonFermionD Dw(Umu,*FGrid,*FrbGrid,mass);
+
+    /////////////////////////////////////
+    // Momentum space propagator + FFT //
+    /////////////////////////////////////
+    std::cout << GridLogMessage <<  " Solving by FFT and Feynman rules" <<std::endl;
+    Dw.FreePropagator(src,ref,mass);
+
+    LatticeFermionD    result(FGrid);
+
+    ////////////////////////////////////////////////////////////////////////
+    // Conjugate gradient on normal equations system
+    ////////////////////////////////////////////////////////////////////////
+    std::cout << GridLogMessage << " Solving by Conjugate Gradient (CGNE)" <<std::endl;
+    Dw.Mdag(src,tmp);
+    src=tmp;
+    MdagMLinearOperator<WilsonFermionD,LatticeFermionD> HermOp(Dw);
+    ConjugateGradient<LatticeFermionD> CG(1.0e-8,10000);
+    CG(HermOp,src,result);
+
+    std::cout << GridLogMessage << " Taking difference" <<std::endl;
+    std::cout << GridLogMessage << "Wilson result "<<norm2(result)<<std::endl;
+    std::cout << GridLogMessage << "Wilson ref    "<<norm2(ref)<<std::endl;
+
+    RealD diff = norm2(ref - result);
+    RealD sum  = norm2(ref + result);
+    RealD normratio = diff/sum;
+    std::cout << GridLogMessage << "||result - ref||                      "<< diff <<std::endl;
+    std::cout << GridLogMessage << "||result - ref||/||result + ref||     "<< normratio <<std::endl;
+    if (normratio >= 1e-8)
+    {
+      std::cout << GridLogError << "Failed to validate free Wilson propagator: ||(result - ref)||/||(result + ref)|| >= 1e-8" << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  }
 };
 
 int main(int argc, char **argv)
@@ -1065,6 +1142,8 @@ int main(int argc, char **argv)
   bool do_flops = true;
   bool do_sp4_fund = true;
   bool do_sp4_2as = true;
+  bool do_fp64 = true;
+  bool do_check_wilson = true;
 
   // NOTE: these two take O((number of ranks)^2) time, which might be a lot, so they are
   // off by default
@@ -1090,11 +1169,11 @@ int main(int argc, char **argv)
       do_latency = true;
     if (arg == "--benchmark-p2p")
       do_p2p = true;
-    if (arg == "--benchmark-sp4-fund")
-      do_sp4_fund = true;
-    if (arg == "--benchmark-sp4-2as")
-      do_sp4_2as = true;
 
+    if (arg == "--benchmark-deo-fp64")
+      do_fp64 = true;
+    if (arg == "--check-wilson")
+      do_check_wilson = true;
     if (arg == "--no-benchmark-su4")
       do_su4 = false;
     if (arg == "--no-benchmark-memory")
@@ -1107,10 +1186,10 @@ int main(int argc, char **argv)
       do_latency = false;
     if (arg == "--no-benchmark-p2p")
       do_p2p = false;
-    if (arg == "--no-benchmark-sp4-fund")
-      do_sp4_fund = false;
-    if (arg == "--no-benchmark-sp4-2as")
-      do_sp4_2as = false;
+    if (arg == "--no-benchmark-deo-fp64")
+      do_fp64 = false;
+    if (arg == "--no-check-wilson")
+      do_check_wilson = false;
     if (arg == "--max-L")
     {
       // Make sure there's another argument to parse
@@ -1190,15 +1269,18 @@ int main(int argc, char **argv)
     exit(EXIT_FAILURE);
   }
 
-  std::vector<double> wilsonf;
-  std::vector<double> wilsond;
-  std::vector<double> dwf4f;
-  std::vector<double> dwf4d;
-  std::vector<double> staggered;
-  std::vector<double> sp4_wilson_fund;
-  std::vector<double> sp4_dwf_fund;
-  std::vector<double> sp4_wilson_2as;
-  std::vector<double> sp4_dwf_2as;
+  std::vector<double> wilson_fp32;
+  std::vector<double> wilson_fp64;
+  std::vector<double> wilson_sp4_fund_fp64;
+  std::vector<double> wilson_sp4_2as_fp64;
+  std::vector<double> dwf4_fp32;
+  std::vector<double> dwf4_fp64;
+  std::vector<double> dwf4_su4_fp32;
+  std::vector<double> dwf4_su4_fp64;
+  std::vector<double> dwf4_sp4_fund_fp64;
+  std::vector<double> dwf4_sp4_2as_fp64;
+  std::vector<double> staggered_fp32;
+  std::vector<double> staggered_fp64;
 
   auto runBenchmark = [](const std::string& name, const std::function<void(void)>& fn)
   {
@@ -1213,127 +1295,122 @@ int main(int argc, char **argv)
   if (do_comms)   runBenchmark("Communications", &Benchmark::Comms);
   if (do_latency) runBenchmark("Latency",        &Benchmark::Latency);
   if (do_p2p)     runBenchmark("Point-To-Point", &Benchmark::P2P);
+  if (do_check_wilson)
+  {
+    grid_big_sep();
+    std::cout << GridLogMessage << " Check Wilson" << std::endl;
+    grid_big_sep();
+    Benchmark::checkWilson();
+  }
 
   int Ls = 12;
   if (do_flops)
   {
-    grid_big_sep();
-    std::cout << GridLogMessage << " fp32 Wilson dslash 4D vectorised" << std::endl;
-    for (int l = 0; l < L_list.size(); l++)
-    {
-      wilsonf.push_back(Benchmark::DoeFlops<DomainWallFermionF>(1, L_list[l]));
-    }
-
-    if (do_sp4_fund)
+    auto runDeo = [&L_list](const std::string& msg, int Ls, std::vector<double>& results, std::function<double(int,int)> fn)
     {
       grid_big_sep();
-      std::cout << GridLogMessage << " Sp4 fundamental Wilson dslash 4D vectorised" << std::endl;
+      std::cout << GridLogMessage << " " << msg << std::endl;
       for (int l = 0; l < L_list.size(); l++)
       {
-        sp4_wilson_fund.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4FundWilsonImplD>>(1, L_list[l]));
+        results.push_back(fn(Ls, L_list[l]));
       }
-    }
+    };
 
-    if (do_sp4_2as)
+    runDeo("fp32 SU(3) fundamental Wilson dslash 4d vectorised", 1, wilson_fp32, &Benchmark::DeoFlops<DomainWallFermionF>);
+    runDeo("fp32 SU(3) fundamental Domain wall dslash 4d vectorised", Ls, dwf4_fp32, &Benchmark::DeoFlops<DomainWallFermionF>);
+    runDeo("fp32 SU(4) fundamental Domain wall dslash 4d vectorised", Ls, dwf4_su4_fp32, &Benchmark::DeoFlops<DomainWallFermionSU4F>);
+    runDeo("fp32 SU(3) fundamental Improved Staggered dslash 4d vectorised", 0, staggered_fp32, &Benchmark::DeoFlops<ImprovedStaggeredFermionF>);
+    if (do_fp64)
     {
-      grid_big_sep();
-      std::cout << GridLogMessage << " Sp4 two-index antisymmetric Wilson dslash 4D vectorised" << std::endl;
-      for (int l = 0; l < L_list.size(); l++)
-      {
-        sp4_wilson_2as.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4TwoIndexAntiSymmetricWilsonImplD>>(1, L_list[l]));
-      }
-    }
-
-    if (do_sp4_fund)
-    {
-      grid_big_sep();
-      std::cout << GridLogMessage << " Sp4 fundamental Domain wall dslash 4D vectorised" << std::endl;
-      for (int l = 0; l < L_list.size(); l++)
-      {
-        sp4_dwf_fund.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4FundWilsonImplD>>(Ls, L_list[l]));
-      }
-    }
-
-    if (do_sp4_2as)
-    {
-      grid_big_sep();
-      std::cout << GridLogMessage << " Sp4 two-index antisymmetric Domain wall dslash 4D vectorised" << std::endl;
-      for (int l = 0; l < L_list.size(); l++)
-      {
-        sp4_dwf_2as.push_back(Benchmark::DoeFlops<DomainWallFermion<Sp4TwoIndexAntiSymmetricWilsonImplD>>(Ls, L_list[l]));
-      }
-    }
-
-    grid_big_sep();
-    std::cout << GridLogMessage << " fp64 Wilson dslash 4D vectorised" << std::endl;
-    for (int l = 0; l < L_list.size(); l++)
-    {
-      wilsond.push_back(Benchmark::DoeFlops<DomainWallFermionD>(1, L_list[l]));
-    }
-
-    grid_big_sep();
-    std::cout << GridLogMessage << " fp32 Domain wall dslash 4D vectorised" << std::endl;
-    for (int l = 0; l < L_list.size(); l++)
-    {
-      double result = Benchmark::DoeFlops<DomainWallFermionF>(Ls, L_list[l]);
-      dwf4f.push_back(result);
-    }
-
-    grid_big_sep();
-    std::cout << GridLogMessage << " fp64 Domain wall dslash 4D vectorised" << std::endl;
-    for (int l = 0; l < L_list.size(); l++)
-    {
-      double result = Benchmark::DoeFlops<DomainWallFermionD>(Ls, L_list[l]);
-      dwf4d.push_back(result);
-    }
-
-    grid_big_sep();
-    std::cout << GridLogMessage << " fp32 Improved Staggered dslash 4D vectorised"
-              << std::endl;
-    for (int l = 0; l < L_list.size(); l++)
-    {
-      double result = Benchmark::DoeFlops<ImprovedStaggeredFermionF>(0, L_list[l]);
-      staggered.push_back(result);
+      runDeo("fp64 SU(3) fundamental Wilson dslash 4d vectorised", 1, wilson_fp64, &Benchmark::DeoFlops<DomainWallFermionD>);
+      runDeo("fp64 Sp(4) fundamental Wilson dslash 4d vectorised", 1, wilson_sp4_fund_fp64, &Benchmark::DeoFlops<DomainWallFermion<Sp4FundWilsonImplD>>);
+      runDeo("fp64 Sp(4) two-index antisymmetric Wilson dslash 4d vectorised", 1, wilson_sp4_2as_fp64, &Benchmark::DeoFlops<DomainWallFermion<Sp4TwoIndexAntiSymmetricWilsonImplD>>);
+      runDeo("fp64 SU(3) fundamental Domain wall dslash 4d vectorised", Ls, dwf4_fp64, &Benchmark::DeoFlops<DomainWallFermionD>);
+      runDeo("fp64 Sp(4) fundamental Domain wall dslash 4d vectorised", Ls, dwf4_sp4_fund_fp64, &Benchmark::DeoFlops<DomainWallFermion<Sp4FundWilsonImplD>>);
+      runDeo("fp64 Sp(4) two-index antisymmetric Wilson dslash 4d vectorised", Ls, dwf4_sp4_2as_fp64, &Benchmark::DeoFlops<DomainWallFermion<Sp4TwoIndexAntiSymmetricWilsonImplD>>);
+      runDeo("fp64 SU(4) fundamental Domain wall dslash 4d vectorised", Ls, dwf4_su4_fp64, &Benchmark::DeoFlops<DomainWallFermionSU4D>);
+      runDeo("fp64 SU(3) fundamental Improved Staggered dslash 4d vectorised", 0, staggered_fp64, &Benchmark::DeoFlops<ImprovedStaggeredFermionD>);
     }
 
     int NN = NN_global;
 
-    grid_big_sep();
-    std::cout << GridLogMessage << "Gflop/s/node Summary table Ls=" << Ls << std::endl;
-    grid_big_sep();
-    grid_printf("%5s %12s %12s %12s %12s %12s %12s %12s\n", "L", "WilsonF", "WilsonD", "DWFF", "DWFD", "Staggered", "Sp4WilsonFun", "Sp4DWF2AS");
     nlohmann::json tmp_flops;
-    for (int l = 0; l < L_list.size(); l++)
-    {
-      grid_printf("%5d %12.2f %12.2f %12.2f %12.2f %12.2f %12.2f %12.2f\n", L_list[l],
-                  wilsonf[l] / NN, wilsond[l] / NN,
-                  dwf4f[l] / NN, dwf4d[l] / NN,
-                  staggered[l] / NN,
-		  sp4_wilson_fund[l] / NN,
-		  sp4_dwf_2as[l] / NN);
+    struct benchmarkResult {
+      const char* header;
+      const char* jsonName;
+      const std::vector<double> results;
 
-      nlohmann::json tmp;
-      tmp["L"] = L_list[l];
-      tmp["Gflops_wilsonf"] = wilsonf[l] / NN;
-      tmp["Gflops_dwf4f"] = dwf4f[l] / NN;
-      tmp["Gflops_wilsond"] = wilsond[l] / NN;
-      tmp["Gflops_dwf4d"] = dwf4d[l] / NN;
-      tmp["Gflops_staggered"] = staggered[l] / NN;
-      tmp["Gflops_sp4_wilson_fund"] = sp4_wilson_fund[l] / NN;
-      tmp["Gflops_sp4_dwf_fund"] = sp4_dwf_fund[l] / NN;
-      tmp["Gflops_sp4_wilson_2as"] = sp4_wilson_2as[l] / NN;
-      tmp["Gflops_sp4_dwf_f2as"] = sp4_dwf_2as[l] / NN;
-      tmp_flops["results"].push_back(tmp);
-    }
+      benchmarkResult(const char* header, const char* jsonName, const std::vector<double> results) :
+	header(header), jsonName(jsonName), results(results)
+      {}
+    };
+
+    auto OutputDeoResults = [&NN, &tmp_flops, &L_list, &Ls]
+      (const char* const precision,
+       const std::vector<benchmarkResult> results)
+    {
+      grid_big_sep();
+      std::cout << GridLogMessage << "Gflop/s/node Summary table Ls=" << Ls << std::endl;
+      std::cout << GridLogMessage << " * PRECISION: " << precision << std::endl;
+      grid_big_sep();
+
+      std::stringstream header;
+      header << std::setw(5) << "L";
+      for (auto & result : results) {
+	header << " " << std::setw(17) << std::string(result.header);
+      }
+      header << std::endl;
+
+      grid_printf(header.str().c_str());
+      for (int l = 0; l < L_list.size(); l++)
+      {
+        nlohmann::json tmp;
+        tmp["L"] = L_list[l];
+        tmp["Precision"] = precision;
+	std::stringstream stream;
+	stream.precision(2);
+	stream << std::setw(5) << L_list[l];
+	for (auto & result : results) {
+	  stream << " " << std::setw(17) << std::fixed << result.results[l] / NN;
+	  tmp[std::string(result.jsonName)] = result.results[l] / NN;
+	}
+	stream << std::endl;
+        tmp_flops["results"].push_back(tmp);
+        grid_printf(stream.str().c_str());
+      }
+    };
+
+    OutputDeoResults("FP32",
+		     std::vector<benchmarkResult>({
+                       benchmarkResult("SU(3) Wilson fun", "Gflops_wilson", wilson_fp32),
+		       benchmarkResult("SU(3) DWF fun", "Gflops_dwf4", dwf4_fp32),
+		       benchmarkResult("SU(4) DWF fun", "Gflops_dwf4_su4", dwf4_su4_fp32),
+		       benchmarkResult("SU(3) Stag fun", "Gflops_staggered", staggered_fp32)
+		       }));
+
+    if (do_fp64)
+      OutputDeoResults("FP64",
+		       std::vector<benchmarkResult>({
+                         benchmarkResult("SU(3) Wilson fun", "Gflops_wilson", wilson_fp64),
+                         benchmarkResult("SU(3) DWF fun", "Gflops_dwf4", dwf4_fp64),
+                         benchmarkResult("SU(4) DWF fun", "Gflops_dwf4_su4", dwf4_su4_fp64),
+			 benchmarkResult("SU(3) Stag fun", "Gflops_staggered", staggered_fp64),
+			 benchmarkResult("Sp(4) Wilson fun", "Gflops_wilson_dwf4_fund", wilson_sp4_fund_fp64),
+			 benchmarkResult("Sp(4) DWF fun", "Gflops_dwf4_sp4_fund", dwf4_sp4_fund_fp64),
+			 benchmarkResult("Sp(4) Wilson 2as", "Gflops_wilson_sp4_2as", wilson_sp4_2as_fp64),
+			 benchmarkResult("Sp(4) DWF 2as", "Gflops_dwf4_sp4_2as", dwf4_sp4_2as_fp64)
+			 }));
+			 
+
     grid_big_sep();
     std::cout << GridLogMessage
-              << " Comparison point     result: " << 0.5 * (dwf4f[sel] + dwf4f[selm1]) / NN
+              << " Comparison point     result: " << 0.5 * (dwf4_fp32[sel] + dwf4_fp32[selm1]) / NN
               << " Gflop/s per node" << std::endl;
-    std::cout << GridLogMessage << " Comparison point is 0.5*(" << dwf4f[sel] / NN << "+"
-              << dwf4f[selm1] / NN << ") " << std::endl;
+    std::cout << GridLogMessage << " Comparison point is 0.5*(" << dwf4_fp32[sel] / NN << "+"
+              << dwf4_fp32[selm1] / NN << ") " << std::endl;
     std::cout << std::setprecision(3);
     grid_big_sep();
-    tmp_flops["comparison_point_Gflops"] = 0.5 * (dwf4f[sel] + dwf4f[selm1]) / NN;
+    tmp_flops["comparison_point_Gflops"] = 0.5 * (dwf4_fp32[sel] + dwf4_fp32[selm1]) / NN;
     json_results["flops"] = tmp_flops;
   }
 
