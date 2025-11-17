@@ -698,7 +698,7 @@ class Benchmark
   }
 
   template<typename Action>
-  static double DeoFlops(int Ls, int L)
+  static double DeoFlops(int Ls, int L, Grid::Coordinate pattern)
   {
     double gflops;
     double gflops_best = 0;
@@ -711,7 +711,7 @@ class Benchmark
     int threads = GridThread::GetThreads();
     Coordinate mpi = GridDefaultMpi();
     assert(mpi.size() == 4);
-    Coordinate local({L, L, L, L});
+    Coordinate local({L*pattern[0], L*pattern[1], L*pattern[2], L*pattern[3]});
     Coordinate latt4(
         {local[0] * mpi[0], local[1] * mpi[1], local[2] * mpi[2], local[3] * mpi[3]});
 
@@ -994,6 +994,8 @@ int main(int argc, char **argv)
   bool do_latency = false;
   bool do_p2p = false;
 
+  Grid::Coordinate pattern({1,1,1,1});
+
   int maxL = 48;
   std::string json_filename = ""; // empty indicates no json output
   for (int i = 0; i < argc; i++)
@@ -1033,6 +1035,8 @@ int main(int argc, char **argv)
       do_fp64 = false;
     if (arg == "--no-check-wilson")
       do_check_wilson = false;
+    if (arg == "--pattern")
+      GridCmdOptionIntVector(arg, pattern);
     if (arg == "--max-L")
     {
       // Make sure there's another argument to parse
@@ -1145,13 +1149,13 @@ int main(int argc, char **argv)
   int Ls = 12;
   if (do_flops)
   {
-    auto runDeo = [&L_list](const std::string& msg, int Ls, std::vector<double>& results, std::function<double(int,int)> fn)
+    auto runDeo = [&L_list, &pattern](const std::string& msg, int Ls, std::vector<double>& results, std::function<double(int,int,Grid::Coordinate)> fn)
     {
       grid_big_sep();
       std::cout << GridLogMessage << " " << msg << std::endl;
       for (int l = 0; l < L_list.size(); l++)
       {
-        results.push_back(fn(Ls, L_list[l]));
+        results.push_back(fn(Ls, L_list[l], pattern));
       }
     };
 
