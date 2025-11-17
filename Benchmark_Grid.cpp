@@ -994,7 +994,7 @@ int main(int argc, char **argv)
   bool do_latency = false;
   bool do_p2p = false;
 
-  int maxL = 48;
+  int maxL = 32;
   std::string json_filename = ""; // empty indicates no json output
   for (int i = 0; i < argc; i++)
   {
