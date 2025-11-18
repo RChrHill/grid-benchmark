@@ -995,9 +995,9 @@ int main(int argc, char **argv)
   bool do_p2p = false;
 
   Grid::Coordinate pattern({1,1,1,1});
-
-  int maxL = 48;
+  int maxL = 32;
   std::string json_filename = ""; // empty indicates no json output
+  
   for (int i = 0; i < argc; i++)
   {
     auto arg = std::string(argv[i]);
