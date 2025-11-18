@@ -5,11 +5,13 @@
 
 NAMESPACE_BEGIN(Grid);
 
+typedef Grid::FundamentalRep<4,Grid::GroupName::SU> FundamentalRepresentationSU4;
+
 typedef WilsonImpl<Grid::vComplexF, 
-                   Grid::FundamentalRep<4,Grid::GroupName::SU>, 
+                   FundamentalRepresentationSU4,
                    Grid::CoeffReal> SU4FundWilsonImplF;
 typedef WilsonImpl<Grid::vComplexD, 
-                   Grid::FundamentalRep<4,Grid::GroupName::SU>, 
+                   FundamentalRepresentationSU4,
                    Grid::CoeffReal> SU4FundWilsonImplD;
 
 typedef DomainWallFermion<SU4FundWilsonImplF> DomainWallFermionSU4F;

@@ -1,21 +1,24 @@
-AUTOMAKE_OPTIONS = subdir-objects
 ACLOCAL_AMFLAGS = -I .buildutils/m4
-
+ 
 bin_PROGRAMS =                \
   Benchmark_Grid              \
   Benchmark_IO
 
 Benchmark_Grid_SOURCES              = Benchmark_Grid.cpp \
-                                      Instantiation/Sp4Fund/Wilson.cpp \
-                                      Instantiation/Sp4Fund/CayleyFermion5D.cc \
-                                      Instantiation/Sp4Fund/WilsonFermion5DInstantiationSpWilsonImplD.cc \
-                                      Instantiation/Sp4Fund/WilsonKernelsInstantiationSpWilsonImplD.cc \
-                                      Instantiation/Sp4TwoIndexAntiSymmetric/Wilson.cpp \
-                                      Instantiation/Sp4TwoIndexAntiSymmetric/CayleyFermion5DInstantiationSpWilsonTwoIndexAntiSymmetricImplD.cc \
-                                      Instantiation/Sp4TwoIndexAntiSymmetric/WilsonFermion5DInstantiationSpWilsonTwoIndexAntiSymmetricImplD.cc \
-                                      Instantiation/Sp4TwoIndexAntiSymmetric/WilsonKernelsInstantiationSpWilsonTwoIndexAntiSymmetricImplD.cc \
-                                      instantiation/SU4/WilsonF.cpp\
-                                      instantiation/SU4/WilsonD.cpp\
+                                      instantiation/Sp4Fund/WilsonKernelsF.cpp\
+                                      instantiation/Sp4Fund/WilsonKernelsD.cpp\
+                                      instantiation/Sp4Fund/Wilson5DF.cpp\
+                                      instantiation/Sp4Fund/Wilson5DD.cpp\
+                                      instantiation/Sp4Fund/Cayley5DF.cpp\
+                                      instantiation/Sp4Fund/Cayley5DD.cpp\
+                                      instantiation/Sp4TwoIndexAntiSymmetric/WilsonKernelsF.cpp\
+                                      instantiation/Sp4TwoIndexAntiSymmetric/WilsonKernelsD.cpp\
+                                      instantiation/Sp4TwoIndexAntiSymmetric/Wilson5DF.cpp\
+                                      instantiation/Sp4TwoIndexAntiSymmetric/Wilson5DD.cpp\
+                                      instantiation/Sp4TwoIndexAntiSymmetric/Cayley5DF.cpp\
+                                      instantiation/Sp4TwoIndexAntiSymmetric/Cayley5DD.cpp\
+                                      instantiation/SU4/WilsonKernelsF.cpp\
+                                      instantiation/SU4/WilsonKernelsD.cpp\
                                       instantiation/SU4/Wilson5DF.cpp\
                                       instantiation/SU4/Wilson5DD.cpp\
                                       instantiation/SU4/Cayley5DF.cpp\
