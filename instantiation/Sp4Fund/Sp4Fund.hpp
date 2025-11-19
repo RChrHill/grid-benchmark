@@ -14,7 +14,7 @@ typedef WilsonImpl<Grid::vComplexD,
                    FundamentalRepresentationSp4, 
                    Grid::CoeffReal> Sp4FundWilsonImplD;
 
-typedef DomainWallFermion<Sp4FundWilsonImplD> DomainWallFermionSp4F;
+typedef DomainWallFermion<Sp4FundWilsonImplF> DomainWallFermionSp4F;
 typedef DomainWallFermion<Sp4FundWilsonImplD> DomainWallFermionSp4D;
 
 NAMESPACE_END(Grid);

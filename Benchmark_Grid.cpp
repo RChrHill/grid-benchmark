@@ -96,6 +96,7 @@ template<int Nc_, typename groupName_>
 struct getGroupInfo<FundamentalRep<Nc_, groupName_>>
 {
   static constexpr int Nc = Nc_;
+  typedef groupName_ label;
   typedef GaugeGroup<Nc_, groupName_> group;
   static constexpr const char* getRepresentationName()
   {
@@ -109,6 +110,7 @@ template<int Nc_, TwoIndexSymmetry S_, typename groupName_>
 struct getGroupInfo<TwoIndexRep<Nc_, S_, groupName_>>
 {
   static constexpr int Nc = Nc_;
+  typedef groupName_ label;
   typedef GaugeGroupTwoIndex<Nc_, S_, groupName_> group;
   static constexpr const char* getRepresentationName()
   {
@@ -943,16 +945,58 @@ class Benchmark
     typedef typename ActionInfo::FundamentalGaugeField FundamentalGaugeField;
 
     ///////// Source preparation ////////////
+
+    // The reference Grid commit does not support Group::HotConfiguration
+    // for FP32 Sp(4).
+    // We'll get around this by generating the gauge in double-precision
+    // and casting to single-precision.
     RepresentedGaugeField Umu(UGrid);
-    if constexpr (Nc != Action::Dimension)
+    if constexpr (std::is_same_v<typename GroupInfo::label, GroupName::Sp> &&
+                  std::is_same_v<typename Action::Simd::Real, float>)
     {
-      FundamentalGaugeField Umu_fund(UGrid);
-      Group::HotConfiguration(RNG4, Umu_fund);
-      update_representation<Action>(Umu, Umu_fund);
+      // Set up Grid + RNG for double-precision.
+      // Assume DWF for simplicity: this will just cause a compilation
+      // failure otherwise.
+      typedef DomainWallFermion<WilsonImpl<Grid::vComplexD,
+                   Representation,
+                   Grid::CoeffReal>> ActionD;
+      typedef ActionFactory<ActionD> ActionInfoD;
+
+      GridCartesian *UGridD = SpaceTimeGrid::makeFourDimGrid(
+          latt4, GridDefaultSimd(Nd, ActionD::Simd::Nsimd()), GridDefaultMpi());
+      GridParallelRNG RNG4D(UGridD);
+      RNG4D.SeedFixedIntegers(seeds4);
+
+      // Gauge field generation block -- same as top-level else
+      // statement.
+      typename ActionInfoD::RepresentedGaugeField Umu_fp64(UGridD);
+      if constexpr (Representation::isFundamental)
+      {
+        Group::HotConfiguration(RNG4D, Umu_fp64);
+      }
+      else
+      {
+        typename ActionInfoD::FundamentalGaugeField Umu_fund_fp64(UGridD);
+        Group::HotConfiguration(RNG4D, Umu_fund_fp64);
+        update_representation<ActionD>(Umu_fp64, Umu_fund_fp64);
+      }
+
+      // Convert FP64 -> FP32
+      precisionChange(Umu, Umu_fp64);
+      delete UGridD;
     }
     else
     {
-      Group::HotConfiguration(RNG4, Umu);
+      if constexpr (Representation::isFundamental)
+      {
+        Group::HotConfiguration(RNG4, Umu);
+      }
+      else
+      {
+        FundamentalGaugeField Umu_fund(UGrid);
+        Group::HotConfiguration(RNG4, Umu_fund);
+        update_representation<Action>(Umu, Umu_fund);
+      }
     }
 
     Fermion src(FGrid);
@@ -1308,13 +1352,17 @@ int main(int argc, char **argv)
 
   std::vector<double> wilson_fp32;
   std::vector<double> wilson_fp64;
+  std::vector<double> wilson_sp4_fp32;
   std::vector<double> wilson_sp4_fp64;
+  std::vector<double> wilson_sp4_2as_fp32;
   std::vector<double> wilson_sp4_2as_fp64;
   std::vector<double> dwf4_fp32;
   std::vector<double> dwf4_fp64;
   std::vector<double> dwf4_su4_fp32;
   std::vector<double> dwf4_su4_fp64;
+  std::vector<double> dwf4_sp4_fp32;
   std::vector<double> dwf4_sp4_fp64;
+  std::vector<double> dwf4_sp4_2as_fp32;
   std::vector<double> dwf4_sp4_2as_fp64;
   std::vector<double> staggered_fp32;
   std::vector<double> staggered_fp64;
@@ -1353,10 +1401,26 @@ int main(int argc, char **argv)
       }
     };
 
+    // FP32 Deo FLOPS Benchmark
     runDeo("fp32 SU(3) fundamental Wilson dslash 4d vectorised", 1, wilson_fp32, &Benchmark::DeoFlops<DomainWallFermionF>);
     runDeo("fp32 SU(3) fundamental Domain wall dslash 4d vectorised", Ls, dwf4_fp32, &Benchmark::DeoFlops<DomainWallFermionF>);
-    runDeo("fp32 SU(4) fundamental Domain wall dslash 4d vectorised", Ls, dwf4_su4_fp32, &Benchmark::DeoFlops<DomainWallFermionSU4F>);
+    if (do_deo_su4)
+    {
+      runDeo("fp32 SU(4) fundamental Domain wall dslash 4d vectorised", Ls, dwf4_su4_fp32, &Benchmark::DeoFlops<DomainWallFermionSU4F>);
+    }
+    if (do_deo_sp4_f)
+    {
+        runDeo("fp32 Sp(4) fundamental Wilson dslash 4d vectorised", 1, wilson_sp4_fp32, &Benchmark::DeoFlops<DomainWallFermionSp4F>);
+        runDeo("fp32 Sp(4) fundamental Domain wall dslash 4d vectorised", Ls, dwf4_sp4_fp32, &Benchmark::DeoFlops<DomainWallFermionSp4F>);
+    }
+    if (do_deo_sp4_2as)
+    {
+        runDeo("fp32 Sp(4) two-index antisymmetric Wilson dslash 4d vectorised", 1, wilson_sp4_2as_fp32, &Benchmark::DeoFlops<DomainWallFermionSp4TwoIndexAntiSymmetricF>);
+        runDeo("fp32 Sp(4) two-index antisymmetric Domain wall dslash 4d vectorised", Ls, dwf4_sp4_2as_fp32, &Benchmark::DeoFlops<DomainWallFermionSp4TwoIndexAntiSymmetricF>);
+    }
     runDeo("fp32 SU(3) fundamental Improved Staggered dslash 4d vectorised", 0, staggered_fp32, &Benchmark::DeoFlops<ImprovedStaggeredFermionF>);
+
+    // FP64 Deo FLOPS Benchmark
     if (do_fp64)
     {
       runDeo("fp64 SU(3) fundamental Wilson dslash 4d vectorised", 1, wilson_fp64, &Benchmark::DeoFlops<DomainWallFermionD>);
@@ -1373,7 +1437,7 @@ int main(int argc, char **argv)
       if (do_deo_sp4_2as)
       {
         runDeo("fp64 Sp(4) two-index antisymmetric Wilson dslash 4d vectorised", 1, wilson_sp4_2as_fp64, &Benchmark::DeoFlops<DomainWallFermionSp4TwoIndexAntiSymmetricD>);
-        runDeo("fp64 Sp(4) two-index antisymmetric Wilson dslash 4d vectorised", Ls, dwf4_sp4_2as_fp64, &Benchmark::DeoFlops<DomainWallFermionSp4TwoIndexAntiSymmetricD>);
+        runDeo("fp64 Sp(4) two-index antisymmetric Domain wall dslash 4d vectorised", Ls, dwf4_sp4_2as_fp64, &Benchmark::DeoFlops<DomainWallFermionSp4TwoIndexAntiSymmetricD>);
       }
       runDeo("fp64 SU(3) fundamental Improved Staggered dslash 4d vectorised", 0, staggered_fp64, &Benchmark::DeoFlops<ImprovedStaggeredFermionD>);
     }
@@ -1440,6 +1504,10 @@ int main(int argc, char **argv)
       {"Wilson", "Gflops_wilson", wilson_fp32},
       {"DWF", "Gflops_dwf4", dwf4_fp32},
       {"SU(4) DWF", "Gflops_dwf4_su4", dwf4_su4_fp32},
+      {"Sp(4) Wilson fun", "Gflops_wilson_sp4_fund", wilson_sp4_fp32},
+      {"Sp(4) DWF fun", "Gflops_dwf4_sp4_fund", dwf4_sp4_fp32},
+      {"Sp(4) Wilson 2as", "Gflops_wilson_sp4_2as", wilson_sp4_2as_fp32},
+      {"Sp(4) DWF 2as", "Gflops_dwf4_sp4_2as", dwf4_sp4_2as_fp32},
       {"Staggered", "Gflops_staggered", staggered_fp32}
     });
 
