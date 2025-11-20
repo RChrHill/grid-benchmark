@@ -1283,7 +1283,18 @@ int main(int argc, char **argv)
   {
     auto arg = std::string(argv[i]);
     if (arg == "--json-out")
-      json_filename = argv[i + 1];
+    {
+      if ((i+1) < argc)
+      {
+        json_filename = argv[i + 1];
+        ++i;
+      }
+      else
+      {
+        std::cerr << GridLogError << "--json-out provided without an output filepath." << std::endl;
+        exit(EXIT_FAILURE);
+      }
+    }
     if (arg == "--benchmark-su4")
       do_su4 = true;
     if (arg == "--benchmark-memory")
