@@ -288,12 +288,12 @@ int main(int argc, char **argv)
       }
       catch (const std::invalid_argument &e)
       {
-        std::cerr << GridLogError << "Invalid argument for maxL: " << arg2 << std::endl;
+        std::cerr << GridLogError << "Invalid argument for --max-L: " << arg2 << std::endl;
         exit(EXIT_FAILURE);
       }
       catch (const std::out_of_range &e)
       {
-        std::cerr << GridLogError << "Argument for maxL is out of range: " << arg2
+        std::cerr << GridLogError << "Argument for --max-L is out of range: " << arg2
                   << std::endl;
         exit(EXIT_FAILURE);
       }
@@ -301,7 +301,7 @@ int main(int argc, char **argv)
       // Check limits on L
       if (maxL < 32)
       {
-        std::cerr << GridLogError << "maxL must be at least 32" << std::endl;
+        std::cerr << GridLogError << "--max-L must be at least 32" << std::endl;
         exit(EXIT_FAILURE);
       }
     }
