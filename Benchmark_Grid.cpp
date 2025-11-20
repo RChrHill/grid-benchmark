@@ -39,8 +39,6 @@ std::string getClassName()
 
 using namespace Grid;
 
-int NN_global;
-
 nlohmann::json json_results;
 
 
@@ -348,7 +346,7 @@ struct controls
 class Benchmark
 {
   public:
-  static void Decomposition(void)
+  static void Decomposition(int& NNout)
   {
     nlohmann::json tmp;
     int threads = GridThread::GetThreads();
@@ -364,7 +362,7 @@ class Benchmark
 
     uint64_t NP = TmpGrid->RankCount();
     uint64_t NN = TmpGrid->NodeCount();
-    NN_global = NN;
+    NNout = NN;
     uint64_t SHM = NP / NN;
 
     grid_big_sep();
@@ -874,7 +872,6 @@ class Benchmark
         latt4, GridDefaultSimd(Nd, vComplex::Nsimd()), GridDefaultMpi());
     uint64_t NP = TmpGrid->RankCount();
     uint64_t NN = TmpGrid->NodeCount();
-    NN_global = NN;
     uint64_t SHM = NP / NN;
 
     ///////// Welcome message ////////////
@@ -1390,7 +1387,8 @@ int main(int argc, char **argv)
   CartesianCommunicator::SetCommunicatorPolicy(
       CartesianCommunicator::CommunicatorPolicySequential);
 
-  Benchmark::Decomposition();
+  int NN;
+  Benchmark::Decomposition(NN);
 
   // Generate DeoFlops local volumes
   int sel = 4;
@@ -1520,8 +1518,6 @@ int main(int argc, char **argv)
       }
       runDeo("fp64 SU(3) fundamental Improved Staggered dslash 4d vectorised", 0, staggered_fp64, &Benchmark::DeoFlops<ImprovedStaggeredFermionD>);
     }
-
-    int NN = NN_global;
 
     nlohmann::json tmp_flops;
     struct benchmarkResult
