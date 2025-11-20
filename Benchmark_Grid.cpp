@@ -1197,8 +1197,55 @@ class Benchmark
   }
 };
 
+void printUsage()
+{
+  std::cout<<GridLogMessage<<"Usage: Benchmark_Grid <options>"<<std::endl;
+  std::cout<<GridLogMessage<<"If conflicting or repeated options are given, the final option takes precedence."<<std::endl;
+  std::cout<<GridLogMessage<<"Options:"<<std::endl;
+  std::cout<<GridLogMessage<<"  --help                     : This message"<<std::endl;
+  std::cout<<GridLogMessage<<"  --json-out <path>          : Export results to a JSON at <path>."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-memory         : Enable axpy memory benchmark (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-memory      : Disable axpy memory benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-su4            : Enable SU(4) memory benchmark (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-su4         : Disable SU(4) memory benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-comms          : Enable communications benchmark (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-comms       : Disable communications benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-flops          : Enable all Dirac Matrix Flops benchmarks (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-flops       : Disable all Dirac Matrix Flops benchmarks."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-deo-su4        : Enable SU(4) Dirac Matrix Flops benchmark (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-deo-su4     : Disable SU(4) Dirac Matrix Flops benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-deo-sp4-f      : Enable Sp(4) Dirac Matrix Flops benchmark (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-deo-sp4-f   : Disable Sp(4) Dirac Matrix Flops benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-deo-sp4-2as    : Enable Sp(4) Two-Index AntiSymmetric Dirac Matrix Flops benchmark (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-deo-sp4-2as : Disable Sp(4) Two-Index AntiSymmetric Dirac Matrix Flops benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-deo-fp64       : Enable FP64 Dirac Matrix Flops benchmarks (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-deo-fp64    : Disable FP64 Dirac Matrix Flops benchmarks."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-latency        : Enable point-to-point communications latency benchmark (default=off)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-latency     : Disable point-to-point communications latency benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-p2p            : Enable point-to-point communications bandwidth benchmark (default=off)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-p2p         : Disable point-to-point communications bandwidth benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --check-wilson             : Enable Wilson Fermion correctness check (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-check-wilson          : Disable Wilson Fermion correctness check."<<std::endl;
+  std::cout<<GridLogMessage<<"  --pattern <x.y.z.t>        : Scales the local lattice dimensions by the factors in the string x.y.z.t."<<std::endl;
+  std::cout<<GridLogMessage<<"  --max-L                    : Sets the maximum lattice size for the flops benchmarks. This must decompose to 2^n 3^m, for n>0 and m={0,1}."<<std::endl;
+  std::cout<<GridLogMessage<<std::endl;
+  std::cout<<GridLogMessage<<std::endl;
+  std::cout<<GridLogMessage<<"See below for Grid usage."<<std::endl;
+  std::cout<<GridLogMessage<<std::endl;
+  std::cout<<GridLogMessage<<std::endl;
+}
+
 int main(int argc, char **argv)
 {
+  for (int i = 0; i < argc; i++)
+  {
+    auto arg = std::string(argv[i]);
+    if (arg == "--help")
+    {
+      printUsage();
+      break;
+    }
+  }
   Grid_init(&argc, &argv);
 
   bool do_su4 = true;
