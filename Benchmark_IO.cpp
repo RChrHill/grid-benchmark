@@ -65,8 +65,30 @@ enum
   gWrite = 3
 };
 
+void printUsage()
+{
+  std::cout<<GridLogMessage<<"Usage: Benchmark_IO <options>"<<std::endl;
+  std::cout<<GridLogMessage<<"Options:"<<std::endl;
+  std::cout<<GridLogMessage<<"  --help                     : This message"<<std::endl;
+  std::cout<<GridLogMessage<<"  --json-out <path>          : Export results to a JSON at <path>."<<std::endl;
+  std::cout<<GridLogMessage<<std::endl;
+  std::cout<<GridLogMessage<<std::endl;
+  std::cout<<GridLogMessage<<"See below for Grid usage."<<std::endl;
+  std::cout<<GridLogMessage<<std::endl;
+  std::cout<<GridLogMessage<<std::endl;
+}
+
 int main(int argc, char **argv)
 {
+  for (int i = 0; i < argc; i++)
+  {
+    auto arg = std::string(argv[i]);
+    if (arg == "--help")
+    {
+      printUsage();
+      break;
+    }
+  }
   Grid_init(&argc, &argv);
 
   std::string json_filename = ""; // empty indicates no json output
