@@ -1214,32 +1214,32 @@ void printUsage()
   std::cout<<GridLogMessage<<"Usage: Benchmark_Grid <options>"<<std::endl;
   std::cout<<GridLogMessage<<"If conflicting or repeated options are given, the final option takes precedence."<<std::endl;
   std::cout<<GridLogMessage<<"Options:"<<std::endl;
-  std::cout<<GridLogMessage<<"  --help                     : This message"<<std::endl;
-  std::cout<<GridLogMessage<<"  --json-out <path>          : Export results to a JSON at <path>."<<std::endl;
-  std::cout<<GridLogMessage<<"  --benchmark-memory         : Enable axpy memory benchmark (default=on)."<<std::endl;
-  std::cout<<GridLogMessage<<"  --no-benchmark-memory      : Disable axpy memory benchmark."<<std::endl;
-  std::cout<<GridLogMessage<<"  --benchmark-su4            : Enable SU(4) memory benchmark (default=on)."<<std::endl;
-  std::cout<<GridLogMessage<<"  --no-benchmark-su4         : Disable SU(4) memory benchmark."<<std::endl;
-  std::cout<<GridLogMessage<<"  --benchmark-comms          : Enable communications benchmark (default=on)."<<std::endl;
-  std::cout<<GridLogMessage<<"  --no-benchmark-comms       : Disable communications benchmark."<<std::endl;
-  std::cout<<GridLogMessage<<"  --benchmark-flops          : Enable all Dirac Matrix Flops benchmarks (default=on)."<<std::endl;
-  std::cout<<GridLogMessage<<"  --no-benchmark-flops       : Disable all Dirac Matrix Flops benchmarks."<<std::endl;
-  std::cout<<GridLogMessage<<"  --benchmark-deo-su4        : Enable SU(4) Dirac Matrix Flops benchmark (default=on)."<<std::endl;
-  std::cout<<GridLogMessage<<"  --no-benchmark-deo-su4     : Disable SU(4) Dirac Matrix Flops benchmark."<<std::endl;
-  std::cout<<GridLogMessage<<"  --benchmark-deo-sp4-f      : Enable Sp(4) Dirac Matrix Flops benchmark (default=on)."<<std::endl;
-  std::cout<<GridLogMessage<<"  --no-benchmark-deo-sp4-f   : Disable Sp(4) Dirac Matrix Flops benchmark."<<std::endl;
-  std::cout<<GridLogMessage<<"  --benchmark-deo-sp4-2as    : Enable Sp(4) Two-Index AntiSymmetric Dirac Matrix Flops benchmark (default=on)."<<std::endl;
-  std::cout<<GridLogMessage<<"  --no-benchmark-deo-sp4-2as : Disable Sp(4) Two-Index AntiSymmetric Dirac Matrix Flops benchmark."<<std::endl;
-  std::cout<<GridLogMessage<<"  --benchmark-deo-fp64       : Enable FP64 Dirac Matrix Flops benchmarks (default=on)."<<std::endl;
-  std::cout<<GridLogMessage<<"  --no-benchmark-deo-fp64    : Disable FP64 Dirac Matrix Flops benchmarks."<<std::endl;
-  std::cout<<GridLogMessage<<"  --benchmark-latency        : Enable point-to-point communications latency benchmark (default=off)."<<std::endl;
-  std::cout<<GridLogMessage<<"  --no-benchmark-latency     : Disable point-to-point communications latency benchmark."<<std::endl;
-  std::cout<<GridLogMessage<<"  --benchmark-p2p            : Enable point-to-point communications bandwidth benchmark (default=off)."<<std::endl;
-  std::cout<<GridLogMessage<<"  --no-benchmark-p2p         : Disable point-to-point communications bandwidth benchmark."<<std::endl;
-  std::cout<<GridLogMessage<<"  --check-wilson             : Enable Wilson Fermion correctness check (default=on)."<<std::endl;
-  std::cout<<GridLogMessage<<"  --no-check-wilson          : Disable Wilson Fermion correctness check."<<std::endl;
-  std::cout<<GridLogMessage<<"  --pattern <x.y.z.t>        : Scales the local lattice dimensions by the factors in the string x.y.z.t."<<std::endl;
-  std::cout<<GridLogMessage<<"  --max-L                    : Sets the maximum lattice size for the flops benchmarks. This must decompose to 2^n 3^m, for n>0 and m={0,1}."<<std::endl;
+  std::cout<<GridLogMessage<<"  --help                       : This message"<<std::endl;
+  std::cout<<GridLogMessage<<"  --json-out <path>            : Export results to a JSON at <path>."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-memory           : Enable axpy memory benchmark (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-memory        : Disable axpy memory benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-su4              : Enable SU(4) memory benchmark (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-su4           : Disable SU(4) memory benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-comms            : Enable communications benchmark (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-comms         : Disable communications benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-flops            : Enable all Dirac Matrix Flops benchmarks (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-flops         : Disable all Dirac Matrix Flops benchmarks."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-flops-su4        : Enable SU(4) Dirac Matrix Flops benchmark (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-flops-su4     : Disable SU(4) Dirac Matrix Flops benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-flops-sp4-f      : Enable Sp(4) Dirac Matrix Flops benchmark (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-flops-sp4-f   : Disable Sp(4) Dirac Matrix Flops benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-flops-sp4-2as    : Enable Sp(4) Two-Index AntiSymmetric Dirac Matrix Flops benchmark (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-flops-sp4-2as : Disable Sp(4) Two-Index AntiSymmetric Dirac Matrix Flops benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-flops-fp64       : Enable FP64 Dirac Matrix Flops benchmarks (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-flops-fp64    : Disable FP64 Dirac Matrix Flops benchmarks."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-latency          : Enable point-to-point communications latency benchmark (default=off)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-latency       : Disable point-to-point communications latency benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --benchmark-p2p              : Enable point-to-point communications bandwidth benchmark (default=off)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-benchmark-p2p           : Disable point-to-point communications bandwidth benchmark."<<std::endl;
+  std::cout<<GridLogMessage<<"  --check-wilson               : Enable Wilson Fermion correctness check (default=on)."<<std::endl;
+  std::cout<<GridLogMessage<<"  --no-check-wilson            : Disable Wilson Fermion correctness check."<<std::endl;
+  std::cout<<GridLogMessage<<"  --pattern <x.y.z.t>          : Scales the local lattice dimensions by the factors in the string x.y.z.t."<<std::endl;
+  std::cout<<GridLogMessage<<"  --max-L                      : Sets the maximum lattice size for the flops benchmarks. This must decompose to 2^n 3^m, for n>0 and m={0,1}."<<std::endl;
   std::cout<<GridLogMessage<<std::endl;
   std::cout<<GridLogMessage<<std::endl;
   std::cout<<GridLogMessage<<"See below for Grid usage."<<std::endl;
@@ -1264,10 +1264,10 @@ int main(int argc, char **argv)
   bool do_memory = true;
   bool do_comms = true;
   bool do_flops = true;
-  bool do_deo_su4  = true;
-  bool do_deo_sp4_f = true;
-  bool do_deo_sp4_2as = true;
-  bool do_fp64 = true;
+  bool do_flops_su4  = true;
+  bool do_flops_sp4_f = true;
+  bool do_flops_sp4_2as = true;
+  bool do_flops_fp64 = true;
   bool do_check_wilson = true;
 
   // NOTE: these two take O((number of ranks)^2) time, which might be a lot, so they are
@@ -1296,14 +1296,14 @@ int main(int argc, char **argv)
       do_latency = true;
     if (arg == "--benchmark-p2p")
       do_p2p = true;
-    if (arg == "--benchmark-deo-su4")
-      do_deo_su4 = true;
-    if (arg == "--benchmark-deo-sp4-f")
-      do_deo_sp4_f = true;
-    if (arg == "--benchmark-deo-sp4-2as")
-      do_deo_sp4_2as = true;
-    if (arg == "--benchmark-deo-fp64")
-      do_fp64 = true;
+    if (arg == "--benchmark-flops-su4")
+      do_flops_su4 = true;
+    if (arg == "--benchmark-flops-sp4-f")
+      do_flops_sp4_f = true;
+    if (arg == "--benchmark-flops-sp4-2as")
+      do_flops_sp4_2as = true;
+    if (arg == "--benchmark-flops-fp64")
+      do_flops_fp64 = true;
     if (arg == "--check-wilson")
       do_check_wilson = true;
     if (arg == "--no-benchmark-su4")
@@ -1318,14 +1318,14 @@ int main(int argc, char **argv)
       do_latency = false;
     if (arg == "--no-benchmark-p2p")
       do_p2p = false;
-    if (arg == "--no-benchmark-deo-su4")
-      do_deo_su4 = false;
-    if (arg == "--no-benchmark-deo-sp4-f")
-      do_deo_sp4_f = false;
-    if (arg == "--no-benchmark-deo-sp4-2as")
-      do_deo_sp4_2as = false;
-    if (arg == "--no-benchmark-deo-fp64")
-      do_fp64 = false;
+    if (arg == "--no-benchmark-flops-su4")
+      do_flops_su4 = false;
+    if (arg == "--no-benchmark-flops-sp4-f")
+      do_flops_sp4_f = false;
+    if (arg == "--no-benchmark-flops-sp4-2as")
+      do_flops_sp4_2as = false;
+    if (arg == "--no-benchmark-flops-fp64")
+      do_flops_fp64 = false;
     if (arg == "--no-check-wilson")
       do_check_wilson = false;
     if (arg == "--pattern")
@@ -1472,16 +1472,16 @@ int main(int argc, char **argv)
     // FP32 Deo FLOPS Benchmark
     runDeo("fp32 SU(3) fundamental Wilson dslash 4d vectorised", 1, wilson_fp32, &Benchmark::DeoFlops<DomainWallFermionF>);
     runDeo("fp32 SU(3) fundamental Domain wall dslash 4d vectorised", Ls, dwf4_fp32, &Benchmark::DeoFlops<DomainWallFermionF>);
-    if (do_deo_su4)
+    if (do_flops_su4)
     {
       runDeo("fp32 SU(4) fundamental Domain wall dslash 4d vectorised", Ls, dwf4_su4_fp32, &Benchmark::DeoFlops<DomainWallFermionSU4F>);
     }
-    if (do_deo_sp4_f)
+    if (do_flops_sp4_f)
     {
         runDeo("fp32 Sp(4) fundamental Wilson dslash 4d vectorised", 1, wilson_sp4_fp32, &Benchmark::DeoFlops<DomainWallFermionSp4F>);
         runDeo("fp32 Sp(4) fundamental Domain wall dslash 4d vectorised", Ls, dwf4_sp4_fp32, &Benchmark::DeoFlops<DomainWallFermionSp4F>);
     }
-    if (do_deo_sp4_2as)
+    if (do_flops_sp4_2as)
     {
         runDeo("fp32 Sp(4) two-index antisymmetric Wilson dslash 4d vectorised", 1, wilson_sp4_2as_fp32, &Benchmark::DeoFlops<DomainWallFermionSp4TwoIndexAntiSymmetricF>);
         runDeo("fp32 Sp(4) two-index antisymmetric Domain wall dslash 4d vectorised", Ls, dwf4_sp4_2as_fp32, &Benchmark::DeoFlops<DomainWallFermionSp4TwoIndexAntiSymmetricF>);
@@ -1489,20 +1489,20 @@ int main(int argc, char **argv)
     runDeo("fp32 SU(3) fundamental Improved Staggered dslash 4d vectorised", 0, staggered_fp32, &Benchmark::DeoFlops<ImprovedStaggeredFermionF>);
 
     // FP64 Deo FLOPS Benchmark
-    if (do_fp64)
+    if (do_flops_fp64)
     {
       runDeo("fp64 SU(3) fundamental Wilson dslash 4d vectorised", 1, wilson_fp64, &Benchmark::DeoFlops<DomainWallFermionD>);
       runDeo("fp64 SU(3) fundamental Domain wall dslash 4d vectorised", Ls, dwf4_fp64, &Benchmark::DeoFlops<DomainWallFermionD>);
-      if (do_deo_su4)
+      if (do_flops_su4)
       {
         runDeo("fp64 SU(4) fundamental Domain wall dslash 4d vectorised", Ls, dwf4_su4_fp64, &Benchmark::DeoFlops<DomainWallFermionSU4D>);
       }
-      if (do_deo_sp4_f)
+      if (do_flops_sp4_f)
       {
         runDeo("fp64 Sp(4) fundamental Wilson dslash 4d vectorised", 1, wilson_sp4_fp64, &Benchmark::DeoFlops<DomainWallFermionSp4D>);
         runDeo("fp64 Sp(4) fundamental Domain wall dslash 4d vectorised", Ls, dwf4_sp4_fp64, &Benchmark::DeoFlops<DomainWallFermionSp4D>);
       }
-      if (do_deo_sp4_2as)
+      if (do_flops_sp4_2as)
       {
         runDeo("fp64 Sp(4) two-index antisymmetric Wilson dslash 4d vectorised", 1, wilson_sp4_2as_fp64, &Benchmark::DeoFlops<DomainWallFermionSp4TwoIndexAntiSymmetricD>);
         runDeo("fp64 Sp(4) two-index antisymmetric Domain wall dslash 4d vectorised", Ls, dwf4_sp4_2as_fp64, &Benchmark::DeoFlops<DomainWallFermionSp4TwoIndexAntiSymmetricD>);
@@ -1579,7 +1579,7 @@ int main(int argc, char **argv)
       {"Staggered", "Gflops_staggered", staggered_fp32}
     });
 
-    if (do_fp64)
+    if (do_flops_fp64)
     {
       OutputDeoResults("FP64",
       {
