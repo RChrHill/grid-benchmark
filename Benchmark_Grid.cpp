@@ -39,9 +39,6 @@ std::string getClassName()
 
 using namespace Grid;
 
-nlohmann::json json_results;
-
-
 /* Grid's template types for actions and representations do not expose template parameters and attributes that we require.
    Here we forcibly expose them via the template system. */
 template<typename Impl>
@@ -346,7 +343,7 @@ struct controls
 class Benchmark
 {
   public:
-  static void Decomposition(int& NNout)
+  static void Decomposition(int& NNout, Grid::Coordinate& pattern, nlohmann::json& json_results)
   {
     nlohmann::json tmp;
     int threads = GridThread::GetThreads();
@@ -410,10 +407,11 @@ class Benchmark
     }
     tmp["ranks"] = NP;
     tmp["nodes"] = NN;
+    tmp["pattern"] = pattern;
     json_results["geometry"] = tmp;
   }
 
-  static void Comms(void)
+  static void Comms(nlohmann::json& json_results)
   {
     const int Nwarmup = 50;
     int Nloop = 200;
@@ -548,7 +546,7 @@ class Benchmark
     return;
   }
 
-  static void Latency(void)
+  static void Latency(nlohmann::json& json_results)
   {
     int Nwarmup = 100;
     int Nloop = 300;
@@ -617,7 +615,7 @@ class Benchmark
     acceleratorFreeDevice(buf_to);
   }
 
-  static void P2P(void)
+  static void P2P(nlohmann::json& json_results)
   {
     // IMPORTANT: The P2P benchmark uses "MPI_COMM_WORLD" communicator, which is
     // not the quite the same as Grid.communicator. Practically speaking, the
@@ -712,7 +710,7 @@ class Benchmark
     acceleratorFreeDevice(buf_to);
   }
 
-  static void Memory(void)
+  static void Memory(nlohmann::json& json_results)
   {
     const int Nwarmup = 50;
     const int Nvec = 8;
@@ -783,7 +781,7 @@ class Benchmark
     }
   };
 
-  static void SU4(void)
+  static void SU4(nlohmann::json& json_results)
   {
     const int Nwarmup = 50;
     const int Nc4 = 4;
@@ -1388,7 +1386,8 @@ int main(int argc, char **argv)
       CartesianCommunicator::CommunicatorPolicySequential);
 
   int NN;
-  Benchmark::Decomposition(NN);
+  nlohmann::json json_results;
+  Benchmark::Decomposition(NN, pattern, json_results);
 
   // Generate DeoFlops local volumes
   int sel = 4;
@@ -1444,12 +1443,12 @@ int main(int argc, char **argv)
   std::vector<double> staggered_fp32;
   std::vector<double> staggered_fp64;
 
-  auto runBenchmark = [](const std::string& name, const std::function<void(void)>& fn)
+  auto runBenchmark = [&json_results](const std::string& name, const std::function<void(nlohmann::json&)>& fn)
   {
     grid_big_sep();
     std::cout << GridLogMessage << " " << name << " benchmark " << std::endl;
     grid_big_sep();
-    fn();
+    fn(json_results);
   };
 
   if (do_memory)  runBenchmark("Memory",         &Benchmark::Memory);
@@ -1613,7 +1612,6 @@ int main(int argc, char **argv)
     json_results["flops"] = tmp_flops;
   }
 
-  json_results["geometry"]["pattern"] = pattern;
   json_results["hostnames"] = get_mpi_hostnames();
 
   if (!json_filename.empty())
