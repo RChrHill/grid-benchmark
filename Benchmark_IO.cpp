@@ -16,6 +16,7 @@
  */
 
 #include "Benchmark_IO.hpp"
+#include "json.hpp"
 
 #ifndef BENCH_IO_LMIN
 #define BENCH_IO_LMIN 8
@@ -67,6 +68,25 @@ enum
 int main(int argc, char **argv)
 {
   Grid_init(&argc, &argv);
+
+  std::string json_filename = ""; // empty indicates no json output
+  for (int i = 0; i < argc; i++)
+  {
+    auto arg = std::string(argv[i]);
+    if (arg == "--json-out")
+    {
+      if ((i+1) < argc)
+      {
+        json_filename = argv[i + 1];
+        ++i;
+      }
+      else
+      {
+        std::cerr << GridLogError << "--json-out provided without an output filepath." << std::endl;
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
 
   int64_t threads = GridThread::GetThreads();
   auto mpi = GridDefaultMpi();
@@ -156,7 +176,7 @@ int main(int argc, char **argv)
   GRID_MSG << "SUMMARY" << std::endl;
   grid_big_sep();
   GRID_MSG << "Summary of individual results (all results in MB/s)." << std::endl;
-  GRID_MSG << "Every second colum gives the standard deviation of the previous column."
+  GRID_MSG << "Every second column gives the standard deviation of the previous column."
            << std::endl;
   GRID_MSG << std::endl;
   grid_printf("%4s %12s %12s %12s %12s %12s %12s %12s %12s\n", "L", "std read", "std dev",
@@ -183,7 +203,7 @@ int main(int argc, char **argv)
   GRID_MSG << std::endl;
   GRID_MSG << "Summary of results averaged over local volumes 24^4-" << BENCH_IO_LMAX
            << "^4 (all results in MB/s)." << std::endl;
-  GRID_MSG << "Every second colum gives the standard deviation of the previous column."
+  GRID_MSG << "Every second column gives the standard deviation of the previous column."
            << std::endl;
   GRID_MSG << std::endl;
   grid_printf("%12s %12s %12s %12s %12s %12s %12s %12s\n", "std read", "std dev",
@@ -199,6 +219,96 @@ int main(int argc, char **argv)
               "Grid write");
   grid_printf("%12.1f %12.1f %12.1f %12.1f\n", avRob(sRead), avRob(sWrite), avRob(gRead),
               avRob(gWrite));
+
+  // Export results to JSON
+  nlohmann::json json_results;
+  // 1. Results for each pass:
+  //    a. On each volume,
+  //    b. The average over (24^4 -- BENCH_IO_LMAX^4) volumes.
+  for (int i=0; i < perf.size(); ++i)
+  {
+    nlohmann::json pass_results;
+    pass_results["Pass"] = i+1;
+    pass_results["av_min_L"] = 24;
+    pass_results["av_max_L"] = BENCH_IO_LMAX;
+    pass_results["av_std_read"]  = avPerf[i](sRead);
+    pass_results["av_std_write"] = avPerf[i](sWrite);
+#ifdef HAVE_LIME
+    pass_results["av_grid_read"]  = avPerf[i](gRead);
+    pass_results["av_grid_write"] = avPerf[i](gWrite);
+#endif
+    for (int l = BENCH_IO_LMIN; l <= BENCH_IO_LMAX; l += 2)
+    {
+      nlohmann::json tmp;
+      tmp["L"] = l;
+      tmp["std_read"]     = perf[i](volInd(l), sRead);
+      tmp["std_write"]    = perf[i](volInd(l), sWrite);
+#ifdef HAVE_LIME
+      tmp["grid_read"]     = perf[i](volInd(l), gRead);
+      tmp["grid_write"]    = perf[i](volInd(l), gWrite);
+#endif
+      pass_results["volumes"].push_back(tmp);
+    }
+    json_results["passes"].push_back(pass_results);
+  }
+  // 2. Results averaged over passes:
+  //    a. On each volume,
+  //    b. The average over (24^4 -- BENCH_IO_LMAX^4) volumes.
+  {
+    nlohmann::json averaged_results;
+    averaged_results["av_min_L"] = 24;
+    averaged_results["av_max_L"] = BENCH_IO_LMAX;
+    averaged_results["av_std_read_mean"]    = avMean  (sRead);
+    averaged_results["av_std_read_stddev"]  = avStdDev(sRead);
+    averaged_results["av_std_read_rob"]     = avRob   (sRead);
+    averaged_results["av_std_write_mean"]   = avMean  (sWrite);
+    averaged_results["av_std_write_stddev"] = avStdDev(sWrite);
+    averaged_results["av_std_write_rob"]    = avRob   (sWrite);
+#ifdef HAVE_LIME
+    averaged_results["av_grid_read_mean"]    = avMean  (gRead);
+    averaged_results["av_grid_read_stddev"]  = avStdDev(gRead);
+    averaged_results["av_grid_read_rob"]     = avRob   (gRead);
+    averaged_results["av_grid_write_mean"]   = avMean  (gWrite);
+    averaged_results["av_grid_write_stddev"] = avStdDev(gWrite);
+    averaged_results["av_grid_write_rob"]    = avRob   (gWrite);
+#endif
+    for (int l = BENCH_IO_LMIN; l <= BENCH_IO_LMAX; l += 2)
+    {
+      nlohmann::json tmp;
+      tmp["L"] = l;
+      tmp["std_read_mean"]    = mean(volInd(l), sRead);
+      tmp["std_read_stddev"]  = stdDev(volInd(l), sRead);
+      tmp["std_read_rob"]     = rob(volInd(l), sRead);
+      tmp["std_write_mean"]   = mean(volInd(l), sWrite);
+      tmp["std_write_stddev"] = stdDev(volInd(l), sWrite);
+      tmp["std_write_rob"]    = rob(volInd(l), sWrite);
+#ifdef HAVE_LIME
+      tmp["grid_read_mean"]    = mean(volInd(l), gRead);
+      tmp["grid_read_stddev"]  = stdDev(volInd(l), gRead);
+      tmp["grid_read_rob"]     = rob(volInd(l), gRead);
+      tmp["grid_write_mean"]   = mean(volInd(l), gWrite);
+      tmp["grid_write_stddev"] = stdDev(volInd(l), gWrite);
+      tmp["grid_write_rob"]    = rob(volInd(l), gWrite);
+#endif
+      averaged_results["volumes"].push_back(tmp);
+    }
+    json_results["average"] = averaged_results;
+  }
+
+  // Write out
+  if (!json_filename.empty())
+  {
+    std::cout << GridLogMessage << "writing benchmark results to " << json_filename
+              << std::endl;
+
+    int me = 0;
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    if (me == 0)
+    {
+      std::ofstream json_file(json_filename);
+      json_file << std::setw(2) << json_results;
+    }
+  }
 
   Grid_finalize();
 
