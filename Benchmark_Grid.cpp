@@ -889,6 +889,18 @@ class Benchmark
     std::cout << GridLogMessage << "Benchmark " << groupFamily << "(" << Nc << ") "
               << ActionInfo::name() << " on " << L << "^4 local volume "
               << std::endl;
+    if (pattern[0]>1 || pattern[1]>1 || pattern[2]>1 || pattern[3]>1)
+    {
+      std::cout << GridLogMessage << "Using pattern "
+                << pattern[0] << "."
+                << pattern[1] << "."
+                << pattern[2] << "."
+                << pattern[3] << ": local volume scaled to "
+                << local[0] << "."
+                << local[1] << "."
+                << local[2] << "."
+                << local[3] << std::endl;
+    }
     std::cout << GridLogMessage << "* Group family   : " << groupFamily << std::endl;
     std::cout << GridLogMessage << "* Nc             : " << Nc << std::endl;
     std::cout << GridLogMessage << "* Representation : " << GroupInfo::getRepresentationName()
@@ -1317,7 +1329,16 @@ int main(int argc, char **argv)
     if (arg == "--no-check-wilson")
       do_check_wilson = false;
     if (arg == "--pattern")
-      GridCmdOptionIntVector(arg, pattern);
+    {
+      // Make sure there's another argument to parse
+      if (i == (argc - 1))
+      {
+        std::cout << GridLogError << "No argument provided for --max-L" << std::endl;
+        exit(EXIT_FAILURE);
+      }
+      ++i;
+      GridCmdOptionIntVector(argv[i], pattern);
+    }
     if (arg == "--max-L")
     {
       // Make sure there's another argument to parse
@@ -1585,6 +1606,7 @@ int main(int argc, char **argv)
     json_results["flops"] = tmp_flops;
   }
 
+  json_results["geometry"]["pattern"] = pattern;
   json_results["hostnames"] = get_mpi_hostnames();
 
   if (!json_filename.empty())
