@@ -4,7 +4,15 @@ bin_PROGRAMS =                \
   Benchmark_Grid              \
   Benchmark_IO
 
-Benchmark_Grid_SOURCES              = Benchmark_Grid.cpp \
+Benchmark_Grid_SOURCES              = Benchmark-Grid/main.cpp \
+                                      Benchmark-Grid/Utils.cpp\
+                                      Benchmark-Grid/benchmarks/Memory.cpp\
+                                      Benchmark-Grid/benchmarks/SU4.cpp\
+                                      Benchmark-Grid/benchmarks/Comms.cpp\
+                                      Benchmark-Grid/benchmarks/Latency.cpp\
+                                      Benchmark-Grid/benchmarks/P2P.cpp\
+                                      Benchmark-Grid/benchmarks/DeoFlops.cpp\
+                                      Benchmark-Grid/checks/Wilson.cpp\
                                       instantiation/Sp4Fund/WilsonKernelsF.cpp\
                                       instantiation/Sp4Fund/WilsonKernelsD.cpp\
                                       instantiation/Sp4Fund/Wilson5DF.cpp\

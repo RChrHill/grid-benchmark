@@ -3,7 +3,7 @@ AC_INIT([lattice-bench], [0.1], [antonin.portelli@me.com])
 AC_CANONICAL_BUILD
 AC_CANONICAL_HOST
 AC_CANONICAL_TARGET
-AC_CONFIG_SRCDIR([Benchmark_Grid.cpp])
+AC_CONFIG_SRCDIR([Benchmark_IO.cpp])
 AC_CONFIG_MACRO_DIR([.buildutils/m4])
 AC_CONFIG_HEADERS([config.h])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign subdir-objects])

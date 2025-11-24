@@ -23,7 +23,7 @@ mkdir -p "${job_info_dir}"
 "${app}" \
   --json-out "${job_info_dir}/result.json" \
   --max-L 32 \
-  --no-benchmark-deo-fp64 \
+  --no-benchmark-flops-fp64 \
   --mpi 1.1.1.1 \
   --threads 8 \
   --shm 1
