@@ -78,6 +78,7 @@ namespace Benchmark
     uint64_t NN = TmpGrid->NodeCount();
     NNout = NN;
     uint64_t SHM = NP / NN;
+    delete TmpGrid;
 
     grid_big_sep();
     std::cout << GridLogMessage << "Grid Default Decomposition patterns\n";

@@ -62,6 +62,7 @@ namespace Benchmark
     uint64_t NP = TmpGrid->RankCount();
     uint64_t NN = TmpGrid->NodeCount();
     uint64_t SHM = NP / NN;
+    delete TmpGrid;
 
     ///////// Welcome message ////////////
     grid_big_sep();
@@ -315,6 +316,16 @@ namespace Benchmark
       }
       std::cout << std::endl;
     }
+
+    // Clean up Grids -- prevents too many MPI Communicators existing + crashing
+    delete UGrid;
+    delete UrbGrid;
+    if (Ls > 0)
+    {
+      delete FGrid;
+      delete FrbGrid;
+    }
+
     return gflops_best;
   }
 }

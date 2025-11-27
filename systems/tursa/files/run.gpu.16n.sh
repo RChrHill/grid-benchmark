@@ -55,7 +55,7 @@ mpirun -np "${SLURM_NTASKS}" -x LD_LIBRARY_PATH --bind-to none \
 	--mpi 1.4.4.4 \
   --accelerator-threads 8 \
 	--threads 8 \
-	--shm 2048 &> "${job_info_dir}/log"
+	--shm 8192 &> "${job_info_dir}/log"
 
 # process telemetry data #######################################################
 kill -INT "${COPROC_PID}"

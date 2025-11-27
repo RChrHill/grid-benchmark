@@ -52,7 +52,7 @@ mpirun -np "${SLURM_NTASKS}" -x LD_LIBRARY_PATH --bind-to none \
 	--json-out "${job_info_dir}/result.json" \
 	--mpi 1.1.1.2 \
 	--threads 64 \
-	--shm 2048 &> "${job_info_dir}/log"
+	--shm 8192 &> "${job_info_dir}/log"
 
 # process telemetry data #######################################################
 kill -INT "${COPROC_PID}"
