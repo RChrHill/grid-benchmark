@@ -1,0 +1,695 @@
+{
+  "SU4": [
+    {
+      "GBps": 469.14964599473626,
+      "GFlops": 629.681995774178,
+      "L": 8,
+      "size_MB": 6.0
+    },
+    {
+      "GBps": 5206.619220009873,
+      "GFlops": 6988.206022708572,
+      "L": 16,
+      "size_MB": 96.0
+    },
+    {
+      "GBps": 5434.510348381187,
+      "GFlops": 7294.076317522115,
+      "L": 24,
+      "size_MB": 486.0
+    },
+    {
+      "GBps": 6189.934707651676,
+      "GFlops": 8307.989729293522,
+      "L": 32,
+      "size_MB": 1536.0
+    },
+    {
+      "GBps": 6459.7373744152155,
+      "GFlops": 8670.112738706955,
+      "L": 40,
+      "size_MB": 3750.0
+    },
+    {
+      "GBps": 6548.848480667152,
+      "GFlops": 8789.715640913972,
+      "L": 48,
+      "size_MB": 7776.0
+    }
+  ],
+  "axpy": [
+    {
+      "GBps": 238.38584178808455,
+      "GFlops": 21.330404048109443,
+      "L": 8,
+      "size_MB": 3.0
+    },
+    {
+      "GBps": 3013.0767531084907,
+      "GFlops": 269.6055440612257,
+      "L": 16,
+      "size_MB": 48.0
+    },
+    {
+      "GBps": 4581.535436077593,
+      "GFlops": 409.9488513212158,
+      "L": 24,
+      "size_MB": 243.0
+    },
+    {
+      "GBps": 5735.205559325921,
+      "GFlops": 513.1775065237963,
+      "L": 32,
+      "size_MB": 768.0
+    },
+    {
+      "GBps": 6159.646880044443,
+      "GFlops": 551.1558730145691,
+      "L": 40,
+      "size_MB": 1875.0
+    },
+    {
+      "GBps": 6329.7274626487715,
+      "GFlops": 566.3744259306153,
+      "L": 48,
+      "size_MB": 3888.0
+    },
+    {
+      "GBps": 6403.127806466098,
+      "GFlops": 572.9421775183356,
+      "L": 56,
+      "size_MB": 7203.0
+    },
+    {
+      "GBps": 6442.192063219378,
+      "GFlops": 576.4375880432916,
+      "L": 64,
+      "size_MB": 12288.0
+    }
+  ],
+  "comms": [
+    {
+      "L": 16,
+      "bytes": 4718592,
+      "dir": 1,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.21086440206326815,
+        "max": 174.04084158415841,
+        "mean": 172.30077435796903
+      },
+      "shared_mem": false,
+      "time_usec": 204.04
+    },
+    {
+      "L": 16,
+      "bytes": 4718592,
+      "dir": 2,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.2586996502994732,
+        "max": 174.04084158415841,
+        "mean": 172.3810341023315
+      },
+      "shared_mem": false,
+      "time_usec": 203.945
+    },
+    {
+      "L": 16,
+      "bytes": 4718592,
+      "dir": 3,
+      "partial_shared_mem": false,
+      "rate_GBps": {
+        "error": 1.2459187634902125,
+        "max": 174.90671641791045,
+        "mean": 163.3275261324042
+      },
+      "shared_mem": false,
+      "time_usec": 215.25
+    },
+    {
+      "L": 16,
+      "bytes": 4718592,
+      "dir": 5,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.20294261584196271,
+        "max": 174.04084158415841,
+        "mean": 172.8599173960075
+      },
+      "shared_mem": false,
+      "time_usec": 203.38
+    },
+    {
+      "L": 16,
+      "bytes": 4718592,
+      "dir": 6,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.06528255395398624,
+        "max": 173.18349753694582,
+        "mean": 172.3092192324658
+      },
+      "shared_mem": false,
+      "time_usec": 204.03
+    },
+    {
+      "L": 16,
+      "bytes": 4718592,
+      "dir": 7,
+      "partial_shared_mem": false,
+      "rate_GBps": {
+        "error": 1.2736341109404137,
+        "max": 174.90671641791045,
+        "mean": 163.11155960748835
+      },
+      "shared_mem": false,
+      "time_usec": 215.535
+    },
+    {
+      "L": 24,
+      "bytes": 15925248,
+      "dir": 1,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.07627412738042733,
+        "max": 180.59717465753423,
+        "mean": 180.0928051575496
+      },
+      "shared_mem": false,
+      "time_usec": 658.84
+    },
+    {
+      "L": 24,
+      "bytes": 15925248,
+      "dir": 2,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.08127931983718951,
+        "max": 180.59717465753425,
+        "mean": 180.05454452335428
+      },
+      "shared_mem": false,
+      "time_usec": 658.98
+    },
+    {
+      "L": 24,
+      "bytes": 15925248,
+      "dir": 3,
+      "partial_shared_mem": false,
+      "rate_GBps": {
+        "error": 1.2618384078074014,
+        "max": 180.87247522865857,
+        "mean": 167.31510565391207
+      },
+      "shared_mem": false,
+      "time_usec": 709.155
+    },
+    {
+      "L": 24,
+      "bytes": 15925248,
+      "dir": 5,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.07334489719754604,
+        "max": 180.87247522865854,
+        "mean": 180.53946797827177
+      },
+      "shared_mem": false,
+      "time_usec": 657.21
+    },
+    {
+      "L": 24,
+      "bytes": 15925248,
+      "dir": 6,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.07130119741426819,
+        "max": 180.59717465753425,
+        "mean": 180.1023728569152
+      },
+      "shared_mem": false,
+      "time_usec": 658.805
+    },
+    {
+      "L": 24,
+      "bytes": 15925248,
+      "dir": 7,
+      "partial_shared_mem": false,
+      "rate_GBps": {
+        "error": 1.2837734515789914,
+        "max": 180.59717465753423,
+        "mean": 167.15246814445405
+      },
+      "shared_mem": false,
+      "time_usec": 709.845
+    },
+    {
+      "L": 32,
+      "bytes": 37748736,
+      "dir": 1,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.21983009818927465,
+        "max": 182.62987012987014,
+        "mean": 181.11567254286405
+      },
+      "shared_mem": false,
+      "time_usec": 1552.875
+    },
+    {
+      "L": 32,
+      "bytes": 37748736,
+      "dir": 2,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.24862719227736138,
+        "max": 182.62987012987014,
+        "mean": 181.03057083364175
+      },
+      "shared_mem": false,
+      "time_usec": 1553.605
+    },
+    {
+      "L": 32,
+      "bytes": 37748736,
+      "dir": 3,
+      "partial_shared_mem": false,
+      "rate_GBps": {
+        "error": 0.9932215967815099,
+        "max": 181.4516129032258,
+        "mean": 167.70469662593058
+      },
+      "shared_mem": false,
+      "time_usec": 1677.055
+    },
+    {
+      "L": 32,
+      "bytes": 37748736,
+      "dir": 5,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.2392754526738336,
+        "max": 182.62987012987017,
+        "mean": 181.0294056120725
+      },
+      "shared_mem": false,
+      "time_usec": 1553.615
+    },
+    {
+      "L": 32,
+      "bytes": 37748736,
+      "dir": 6,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.2310472213921508,
+        "max": 182.62987012987014,
+        "mean": 180.92750677070936
+      },
+      "shared_mem": false,
+      "time_usec": 1554.49
+    },
+    {
+      "L": 32,
+      "bytes": 37748736,
+      "dir": 7,
+      "partial_shared_mem": false,
+      "rate_GBps": {
+        "error": 0.9892359840098887,
+        "max": 181.6860465116279,
+        "mean": 167.44360499383808
+      },
+      "shared_mem": false,
+      "time_usec": 1679.67
+    },
+    {
+      "L": 40,
+      "bytes": 73728000,
+      "dir": 1,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.17969167801258326,
+        "max": 183.16652425808604,
+        "mean": 181.76344862101485
+      },
+      "shared_mem": false,
+      "time_usec": 3022.15
+    },
+    {
+      "L": 40,
+      "bytes": 73728000,
+      "dir": 2,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.2042168067424825,
+        "max": 183.22762049699799,
+        "mean": 181.71023698038562
+      },
+      "shared_mem": false,
+      "time_usec": 3023.035
+    },
+    {
+      "L": 40,
+      "bytes": 73728000,
+      "dir": 3,
+      "partial_shared_mem": false,
+      "rate_GBps": {
+        "error": 0.6998712591235595,
+        "max": 182.3154351974776,
+        "mean": 169.47645472201353
+      },
+      "shared_mem": false,
+      "time_usec": 3241.255
+    },
+    {
+      "L": 40,
+      "bytes": 73728000,
+      "dir": 5,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.17554466165467966,
+        "max": 183.22762049699799,
+        "mean": 181.74480596930977
+      },
+      "shared_mem": false,
+      "time_usec": 3022.46
+    },
+    {
+      "L": 40,
+      "bytes": 73728000,
+      "dir": 6,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.21867121476834275,
+        "max": 183.2887575075075,
+        "mean": 181.66096133908536
+      },
+      "shared_mem": false,
+      "time_usec": 3023.855
+    },
+    {
+      "L": 40,
+      "bytes": 73728000,
+      "dir": 7,
+      "partial_shared_mem": false,
+      "rate_GBps": {
+        "error": 0.6979232881686379,
+        "max": 182.2549456702057,
+        "mean": 170.07726666160963
+      },
+      "shared_mem": false,
+      "time_usec": 3229.805
+    },
+    {
+      "L": 48,
+      "bytes": 127401984,
+      "dir": 1,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.15453204721340433,
+        "max": 183.56579965190483,
+        "mean": 182.08772342088727
+      },
+      "shared_mem": false,
+      "time_usec": 5212.975
+    },
+    {
+      "L": 48,
+      "bytes": 127401984,
+      "dir": 2,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.14036172968101632,
+        "max": 183.56579965190483,
+        "mean": 182.1191655914391
+      },
+      "shared_mem": false,
+      "time_usec": 5212.075
+    },
+    {
+      "L": 48,
+      "bytes": 127401984,
+      "dir": 3,
+      "partial_shared_mem": false,
+      "rate_GBps": {
+        "error": 0.524285295180235,
+        "max": 182.40175826287472,
+        "mean": 172.1164446652572
+      },
+      "shared_mem": false,
+      "time_usec": 5514.98
+    },
+    {
+      "L": 48,
+      "bytes": 127401984,
+      "dir": 5,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.12372289661585771,
+        "max": 183.56579965190485,
+        "mean": 182.14013307173113
+      },
+      "shared_mem": false,
+      "time_usec": 5211.475
+    },
+    {
+      "L": 48,
+      "bytes": 127401984,
+      "dir": 6,
+      "partial_shared_mem": true,
+      "rate_GBps": {
+        "error": 0.11572532337345888,
+        "max": 183.56579965190485,
+        "mean": 182.1590079323576
+      },
+      "shared_mem": false,
+      "time_usec": 5210.935
+    },
+    {
+      "L": 48,
+      "bytes": 127401984,
+      "dir": 7,
+      "partial_shared_mem": false,
+      "rate_GBps": {
+        "error": 0.5391302905470463,
+        "max": 182.5069698134974,
+        "mean": 172.6277564745496
+      },
+      "shared_mem": false,
+      "time_usec": 5498.645
+    }
+  ],
+  "flops": {
+    "comparison_point_Gflops": 8614.535454339464,
+    "results": [
+      {
+        "Gflops_dwf4": 930.5314401622717,
+        "Gflops_dwf4_sp4_2as": 2029.311501559971,
+        "Gflops_dwf4_sp4_fund": 1449.8298297273077,
+        "Gflops_dwf4_su4": 1451.4278683482005,
+        "Gflops_staggered": 8.179053400638082,
+        "Gflops_wilson": 55.21422625196834,
+        "Gflops_wilson_sp4_2as": 235.7911263021898,
+        "Gflops_wilson_sp4_fund": 156.44161527750148,
+        "L": 8,
+        "Precision": "FP32"
+      },
+      {
+        "Gflops_dwf4": 2643.6125686731752,
+        "Gflops_dwf4_sp4_2as": 4761.377060943591,
+        "Gflops_dwf4_sp4_fund": 3665.142550280651,
+        "Gflops_dwf4_su4": 3659.1072759765125,
+        "Gflops_staggered": 150.99700718656473,
+        "Gflops_wilson": 465.5805142083897,
+        "Gflops_wilson_sp4_2as": 1102.3956744347615,
+        "Gflops_wilson_sp4_fund": 747.9217257897868,
+        "L": 12,
+        "Precision": "FP32"
+      },
+      {
+        "Gflops_dwf4": 4396.709670173337,
+        "Gflops_dwf4_sp4_2as": 7253.482023776148,
+        "Gflops_dwf4_sp4_fund": 5789.461447030406,
+        "Gflops_dwf4_su4": 5807.088371973771,
+        "Gflops_staggered": 403.74507980367594,
+        "Gflops_wilson": 1279.0483271375465,
+        "Gflops_wilson_sp4_2as": 2750.3960702959203,
+        "Gflops_wilson_sp4_fund": 1905.8039859142484,
+        "L": 16,
+        "Precision": "FP32"
+      },
+      {
+        "Gflops_dwf4": 7355.297521467738,
+        "Gflops_dwf4_sp4_2as": 11566.274147955877,
+        "Gflops_dwf4_sp4_fund": 9462.846616957098,
+        "Gflops_dwf4_su4": 9475.417113083864,
+        "Gflops_staggered": 1307.8806649903167,
+        "Gflops_wilson": 4063.0074716623535,
+        "Gflops_wilson_sp4_2as": 6496.25650125436,
+        "Gflops_wilson_sp4_fund": 5089.903610286186,
+        "L": 24,
+        "Precision": "FP32"
+      },
+      {
+        "Gflops_dwf4": 9873.773387211191,
+        "Gflops_dwf4_sp4_2as": 15447.496657948675,
+        "Gflops_dwf4_sp4_fund": 12046.057288831678,
+        "Gflops_dwf4_su4": 12058.217305568669,
+        "Gflops_staggered": 2187.9739191391345,
+        "Gflops_wilson": 6344.077860107499,
+        "Gflops_wilson_sp4_2as": 7795.429003486941,
+        "Gflops_wilson_sp4_fund": 6796.465224620007,
+        "L": 32,
+        "Precision": "FP32"
+      },
+      {
+        "Gflops_dwf4": 766.8677431712385,
+        "Gflops_dwf4_sp4_2as": 1416.1711044355861,
+        "Gflops_dwf4_sp4_fund": 1059.0587201092294,
+        "Gflops_dwf4_su4": 1059.7722980750336,
+        "Gflops_staggered": 4.587938279050083,
+        "Gflops_wilson": 98.03615122967607,
+        "Gflops_wilson_sp4_2as": 235.18726347383532,
+        "Gflops_wilson_sp4_fund": 160.65479554662764,
+        "L": 8,
+        "Precision": "FP64"
+      },
+      {
+        "Gflops_dwf4": 1679.481978837626,
+        "Gflops_dwf4_sp4_2as": 2773.3441410405794,
+        "Gflops_dwf4_sp4_fund": 2206.9696811049694,
+        "Gflops_dwf4_su4": 2211.797334156363,
+        "Gflops_staggered": 148.2593662459525,
+        "Gflops_wilson": 450.025578090686,
+        "Gflops_wilson_sp4_2as": 873.9205708743909,
+        "Gflops_wilson_sp4_fund": 662.9535003122182,
+        "L": 12,
+        "Precision": "FP64"
+      },
+      {
+        "Gflops_dwf4": 2486.127340083972,
+        "Gflops_dwf4_sp4_2as": 3935.9841664344335,
+        "Gflops_dwf4_sp4_fund": 3200.627654914152,
+        "Gflops_dwf4_su4": 3205.916862767301,
+        "Gflops_staggered": 369.32402289580835,
+        "Gflops_wilson": 1099.2871638065524,
+        "Gflops_wilson_sp4_2as": 1756.4354566081408,
+        "Gflops_wilson_sp4_fund": 1547.5391663506575,
+        "L": 16,
+        "Precision": "FP64"
+      },
+      {
+        "Gflops_dwf4": 3863.749375764499,
+        "Gflops_dwf4_sp4_2as": 5643.366928306919,
+        "Gflops_dwf4_sp4_fund": 4954.854982217939,
+        "Gflops_dwf4_su4": 4950.525654870709,
+        "Gflops_staggered": 910.1960744884842,
+        "Gflops_wilson": 2415.556744926814,
+        "Gflops_wilson_sp4_2as": 2999.852351510263,
+        "Gflops_wilson_sp4_fund": 2929.3311924460913,
+        "L": 24,
+        "Precision": "FP64"
+      },
+      {
+        "Gflops_dwf4": 5133.974047547923,
+        "Gflops_dwf4_sp4_2as": 5699.232114275318,
+        "Gflops_dwf4_sp4_fund": 5754.449019257565,
+        "Gflops_dwf4_su4": 5755.718288339139,
+        "Gflops_staggered": 1303.6924605800757,
+        "Gflops_wilson": 2897.0296448416,
+        "Gflops_wilson_sp4_2as": 3159.832342547188,
+        "Gflops_wilson_sp4_fund": 3317.3808620810396,
+        "L": 32,
+        "Precision": "FP64"
+      }
+    ]
+  },
+  "geometry": {
+    "mpi": [
+      1,
+      4,
+      4,
+      4
+    ],
+    "nodes": 16,
+    "pattern": [
+      1,
+      1,
+      1,
+      1
+    ],
+    "ranks": 64,
+    "shm": [
+      1,
+      2,
+      2,
+      1
+    ]
+  },
+  "hostnames": [
+    "tu-c0r7n00",
+    "tu-c0r7n00",
+    "tu-c0r7n00",
+    "tu-c0r7n00",
+    "tu-c0r7n03",
+    "tu-c0r7n03",
+    "tu-c0r7n03",
+    "tu-c0r7n03",
+    "tu-c0r7n06",
+    "tu-c0r7n06",
+    "tu-c0r7n06",
+    "tu-c0r7n06",
+    "tu-c0r7n09",
+    "tu-c0r7n09",
+    "tu-c0r7n09",
+    "tu-c0r7n09",
+    "tu-c0r7n12",
+    "tu-c0r7n12",
+    "tu-c0r7n12",
+    "tu-c0r7n12",
+    "tu-c0r7n15",
+    "tu-c0r7n15",
+    "tu-c0r7n15",
+    "tu-c0r7n15",
+    "tu-c0r7n18",
+    "tu-c0r7n18",
+    "tu-c0r7n18",
+    "tu-c0r7n18",
+    "tu-c0r7n21",
+    "tu-c0r7n21",
+    "tu-c0r7n21",
+    "tu-c0r7n21",
+    "tu-c0r7n24",
+    "tu-c0r7n24",
+    "tu-c0r7n24",
+    "tu-c0r7n24",
+    "tu-c0r7n27",
+    "tu-c0r7n27",
+    "tu-c0r7n27",
+    "tu-c0r7n27",
+    "tu-c0r7n30",
+    "tu-c0r7n30",
+    "tu-c0r7n30",
+    "tu-c0r7n30",
+    "tu-c0r7n33",
+    "tu-c0r7n33",
+    "tu-c0r7n33",
+    "tu-c0r7n33",
+    "tu-c0r7n36",
+    "tu-c0r7n36",
+    "tu-c0r7n36",
+    "tu-c0r7n36",
+    "tu-c0r7n39",
+    "tu-c0r7n39",
+    "tu-c0r7n39",
+    "tu-c0r7n39",
+    "tu-c0r7n42",
+    "tu-c0r7n42",
+    "tu-c0r7n42",
+    "tu-c0r7n42",
+    "tu-c0r7n45",
+    "tu-c0r7n45",
+    "tu-c0r7n45",
+    "tu-c0r7n45"
+  ]
+}
