@@ -101,15 +101,15 @@ well as memory and inter-process bandwidth measurements using Grid routines. The
 command accepts any Grid flag (see the complete list with `--help`), as well as a 
 `--json-out <file>` flag to save the measurement results in JSON to `<file>`. The 
 benchmarks are performed on a fixed set of problem sizes, and the Grid flag `--grid` will
-be ignored.
+be ignored. The *Floating-point performace* benchmark can run on additional larger problems sizes as detailed in its subsection.
 
 The resulting metrics are as follows. All data-size units are in base 2 
-(i.e. 1 kB = 1024 B).
+(i.e. 1 kB = 1024 B) and flops are given in base 10 (i.e. 1 kB = 1000 B).
 
 *Memory bandwidth*
 
 One sub-benchmark measures the memory bandwidth using a lattice version of the `axpy` BLAS
-routine, similar to the STREAM benchmark. The JSON entries under `"axpy"` have the form:
+routine, similar to the STREAM benchmark. This benchmark can be disabled with the `--no-benchmark-memory` CLI argument. The JSON entries under `"axpy"` have the form:
 ```json
 {
   "GBps": 215.80653375861607,   // bandwidth in GB/s/node
@@ -120,7 +120,7 @@ routine, similar to the STREAM benchmark. The JSON entries under `"axpy"` have t
 ```
 
 A second benchmark performs site-wise SU(4) matrix multiplication and has a higher
-arithmetic intensity than the `axpy` test (although it is still memory-bound). 
+arithmetic intensity than the `axpy` test (although it is still memory-bound). This benchmark can be disabled with the `--no-benchmark-su4` CLI argument. 
 The JSON entries under `"SU4"` have the form:
 ```json
 {
@@ -137,7 +137,7 @@ This sub-benchmark measures the achieved bidirectional bandwidth in threaded hal
 using routines in Grid. The exchange is performed in each direction on the MPI Cartesian
 grid, which is parallelised across at least two processes. The resulting bandwidth is
 related to node-local transfers (inter-CPU, NVLink, ...) or network transfers depending
-on the MPI decomposition. The JSON entries under `"comms"` have the form:
+on the MPI decomposition. This benchmark can be disabled with the `--no-benchmark-comms` CLI argument. The JSON entries under `"comms"` have the form:
 ```json
 {
   "L": 40,                       // local lattice size
@@ -156,16 +156,119 @@ on the MPI decomposition. The JSON entries under `"comms"` have the form:
 *Floating-point performances*
 
 This sub-benchmark measures the achieved floating-point performance for the Wilson-, 
-domain-wall- and staggered-fermion sparse matrices provided by Grid. In the `"flops"`
+domain-wall- and staggered-fermion sparse matrices provided by Grid. For Wilson and domain-wall, multiple matrix sizes per lattice site are tested. By default, both single- and double-precision versions of the benchmark are performed. The matrix size at each site is as follows:
+name | element count
+-- | --
+Wilson | 3*4
+Wilson Sp(4) | 4*4
+Wilson Sp(4) Two-Index Antisymmetric | 5*4
+domain-wall | 3*4
+domain-wall SU(4) | 4*4
+domain-wall Sp(4) | 4*4
+domain-wall Sp(4) Two-Index Antisymmetric | 5*4
+staggered | 3*4
+
+The entire benchmark can be disabled with the `--no-benchmark-flops` flag. Individual sub-benchmarks can be disabled as follows:
+- `--no-benchmark-flops-su4`: domain-wall SU(4)
+- `--no-benchmark-flops-sp4-f`: Wilson Sp(4), domain-wall Sp(4)
+- `--no-benchmark-flops-sp4-2as`: Wilson Sp(4) Two-Index Antisymmetric, domain-wall Sp(4) Two-Index Antisymmetric
+
+Wilson, domain-wall, and staggered are not able to be disabled.
+
+The double-precision versions of the benchmarks can be disabled with `--no-benchmark-fp64`.
+
+For devices with large amounts of dedicated memory, it is possible to run the benchmark for additional problem sizes with the `--max-L <maximum size>` flag. Note that the maximum size *must* either be 2<sup>n</sup> or 3*2<sup>n</sup>. Since the default maximum size is 32 (the **minimum** acceptable `--max-L`) the next possible value is 48. The next highest and lowest valid values will be reported if an invalid value is entered.
+
+In the `"flops"`
 and `"results"` sections of the JSON output the best performances are recorded, e.g.:
 ```json
 {
-  "Gflops_dwf4": 366.5251173474483,       // domain-wall in Gflop/s/node (single precision)
-  "Gflops_staggered": 7.5982861018529455, // staggered in Gflop/s/node (single precision)
-  "Gflops_wilson": 15.221839719288932,    // Wilson in Gflop/s/node (single precision)
-  "L": 8                                  // local lattice size
+  "Gflops_dwf4": 930.5314401622717,             // domain-wall in Gflop/s/node
+  "Gflops_dwf4_sp4_2as": 2029.311501559971,     // domain-wall Sp(4) Two-Index Antisymmetric in Gflop/s/node
+  "Gflops_dwf4_sp4_fund": 1449.8298297273077,   // domain-wall Sp(4) in Gflop/s/node
+  "Gflops_dwf4_su4": 1451.4278683482005,        // domain-wall SU(4) in Gflop/s/node
+  "Gflops_staggered": 8.179053400638082,        // staggered in Gflop/s/node
+  "Gflops_wilson": 55.21422625196834,           // Wilson in Gflop/s/node
+  "Gflops_wilson_sp4_2as": 235.7911263021898,   // Wilson Sp(4) Two-Index Antisymmetric in Gflop/s/node
+  "Gflops_wilson_sp4_fund": 156.44161527750148, // Wilson Sp(4) in Gflop/s/node
+  "L": 8,                                       // local lattice size
+  "Precision": "FP32"                           // data type (FP32 or FP64)
 }
 ```
 Here "best" means the best result across the different implementations of the routines.
 Please see the benchmark log for a detailed breakdown. Finally, the JSON output contains
-a "comparison point", which is the average of the L=24 and L=32 best domain-wall performances.
+a "comparison point", which is the average of the L=24 and L=32 best domain-wall (`"Gflops_dwf4"`) single-precision performances.
+
+### `Benchmark_IO`
+
+This benchmark tests the parallel I/O performance of Grid for both reading and writing, and compares this against the I/O performance of the C++ standard library. This benchmark is non-configurable and runs on a fixed set of problem sizes. Measurement results can be saved to a file with the `--json-out <file>` flag. All data-size units are in base 2 (i.e. kB = 1024 B).
+
+The benchmark repeats 10 times. On each pass, the benchmark will:
+1) Write a Grid structure to disk using `std::ofstream` using one file per process,
+2) Read the same Grid structure back into memory using `std::ifstream` using one file per process,
+3) Write a Grid structure to a single file using Grid's parallel I/O,
+4) Read the same Grid structure back into memory using Grid's parallel I/O from the single file.
+
+The results for each pass are written into the `"passes"` section of the output JSON. This consists of performance averages over all problem sizes 24 to 32 inclusive, as well as the performance on each problem size individually. Each pass has the following structure:
+```json
+{
+  "Pass": 1,                           // pass index, 1-10
+  "av_grid_read": 6426.877979887839,   // average Grid parallel I/O read speed in GB/s
+  "av_grid_write": 1283.9060495508716, // average Grid parallel I/O write speed in GB/s
+  "av_max_L": 32,                      // largest problem size used in the average
+  "av_min_L": 24,                      // smallest problem size used in the average
+  "av_std_read": 51489.06630810099,    // std::ifstream I/O read speed in GB/s
+  "av_std_write": 5371.805416924437,   // std::ofstream I/O write speed in GB/s
+  "volumes": [...]                     // individual results on each problem size
+}
+```
+The subsection `"volumes"` of the `"passes"` section records results for each problem size on each pass in the following form:
+```json
+{
+  "L": 8,                           // local lattice size
+  "grid_read": 631.8449873631004,   // Grid parallel I/O read speed in GB/s
+  "grid_write": 193.74838543012143, // Grid parallel I/O write speed in GB/s
+  "std_read": 77922.07792207792,    // std::ifstream I/O read speed in GB/s
+  "std_write": 4930.156121610517    // std::ofstream I/O write speed in GB/s
+},
+```
+Summary statistics for the passes and the volume-averages are recorded in the `"average"` section of the JSON, which has the following structure:
+```json
+{
+  "av_grid_read_mean": 6771.762525331016,     // mean of 'av_grid_read' over all 10 passes in GB/s
+  "av_grid_read_rob": 96.36351333776568,      // robustness of 'av_grid_read' over all 10 passes in %
+  "av_grid_read_stddev": 246.25424103184403,  // standard deviation of 'av_grid_read' over all 10 passes in GB/s
+  "av_grid_write_mean": 1301.360669990908,    // mean of 'av_grid_write' over all 10 passes in GB/s
+  "av_grid_write_rob": 98.05881576571363,     // robustness of 'av_grid_write' over all 10 passes in %
+  "av_grid_write_stddev": 25.261808157067016, // standard deviation of 'av_grid_write' over all 10 passes in GB/s
+  "av_max_L": 32,                             // largest problem size used in the average
+  "av_min_L": 24,                             // smallest problem size used in the average
+  "av_std_read_mean": 49775.25973673006,      // mean of 'av_std_read' over all 10 passes in GB/s
+  "av_std_read_rob": 97.51189971101847,       // robustness of 'av_grid_read' over all 10 passes in %
+  "av_std_read_stddev": 1238.4583813508862,   // standard deviation of 'av_grid_read' over all 10 passes in GB/s
+  "av_std_write_mean": 5411.033884034247,     // mean of 'av_grid_write' over all 10 passes in GB/s
+  "av_std_write_rob": 97.10663406573798,      // robustness of 'av_grid_write' over all 10 passes in %
+  "av_std_write_stddev": 156.5610110920218,   // standard deviation of 'av_grid_write' over all 10 passes in GB/s,
+  "volumes": [...]
+}
+```
+
+'Robustness' is defined as `1 - std.dev. / |mean|`, where `|mean|` is the absolute value of the mean. Once again the pass-averages per-volume are individually recorded in the `"volumes"` subsection with the following structure:
+
+```json
+{
+  "L": 8,                                  // local lattice size
+  "grid_read_mean": 638.2219086851617,     // mean of 'grid_read' over all 10 passes in GB/s
+  "grid_read_rob": 59.7194074010008,       // robustness of 'grid_read' over all 10 passes in GB/s
+  "grid_read_stddev": 257.07956691502665,  // standard deviation of 'grid_read' over all 10 passes in %
+  "grid_write_mean": 397.54878301223994,   // mean of 'grid_write' over all 10 passes in GB/s
+  "grid_write_rob": 70.384645339958,       // robustness of 'grid_write' over all 10 passes in %
+  "grid_write_stddev": 117.73548203575567, // standard deviation of 'grid_write' over all 10 passes in GB/s
+  "std_read_mean": 63641.793997669476,     // mean of 'std_read' over all 10 passes in GB/s
+  "std_read_rob": 84.87482271891673,       // robustness of 'std_read' over all 10 passes in %
+  "std_read_stddev": 9625.934167009314,    // standard deviation of 'std_read' over all 10 passes in GB/s
+  "std_write_mean": 5539.262098862089,     // mean of 'std_write' over all 10 passes in GB/s
+  "std_write_rob": 93.89967914021757,      // robustness of 'std_write' over all 10 passes in %
+  "std_write_stddev": 337.9127612949058    // standard deviation of 'std_write' over all 10 passes in GB/s
+}
+```
