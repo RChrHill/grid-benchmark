@@ -98,10 +98,76 @@ More information about the benchmark results is provided below.
 ### `Benchmark_Grid`
 This benchmark performs flop/s measurements for typical lattice QCD sparse matrices, as
 well as memory and inter-process bandwidth measurements using Grid routines. The benchmark
-command accepts any Grid flag (see the complete list with `--help`), as well as a 
-`--json-out <file>` flag to save the measurement results in JSON to `<file>`. The 
+command accepts any Grid flag (see the complete list with `--help`), as well as any benchmark-specific flags. The Grid `--help` string for commit `6165931afaa53a9885b6183ff762fc2477f30b51` is reproduced below for convenience.
+```
+  --help : this message
+Geometry:
+  --mpi n.n.n.n   : default MPI decomposition
+  --threads n     : default number of OMP threads
+  --grid n.n.n.n  : default Grid size
+  --shm  M        : allocate M megabytes of shared memory for comms
+  --shm-mpi 0|1   : Force MPI usage under multi-rank per node 
+  --shm-hugepages : use explicit huge pages in mmap call 
+  --device-mem M  : Size of device software cache for lattice fields (MB) 
+Verbose:
+  --log list      : comma separated list from Error,Warning,Message,Performance,Iterative,Integrator,Debug,Colours
+  --notimestamp   : suppress millisecond resolution stamps
+  --decomposition : report on default omp,mpi and simd decomposition
+Debug:
+  --dylib-map     : print dynamic library map, useful for interpreting signal backtraces 
+  --heartbeat     : periodic itimer wakeup (interrupts stuck system calls!) 
+  --signal-delay n : pause for n seconds after signal handling (useful to get ALL nodes in stuck state) 
+  --debug-stdout  : print stdout from EVERY node to file Grid.stdout/err.rank 
+  --debug-signals : catch sigsegv and print a blame report, handle SIGHUP with a backtrace to stderr
+  --debug-heartbeat : periodically report backtrace 
+  --debug-mem     : print Grid allocator activity
+Performance:
+  --comms-overlap    : Overlap comms with compute
+  --dslash-generic: Wilson kernel for generic Nc
+  --dslash-unroll : Wilson kernel for Nc=3
+  --dslash-asm    : Wilson kernel for AVX512"
+```
+In addition, there are flags that are undocumented by the help string:
+Flag | Result
+--|--
+--accelerator-threads | Multiplies the number of threads in a threadblock on the device.
+
+
+
+The benchmark flags are as follows:
+
+Flag | Result
+--|--
+--help                       | Display all benchmark CLI flags and Grid CLI flags.
+--json-out \<file\>          | Save the measurement results in JSON format to `<file>`.
+--benchmark-memory           | Enable axpy memory benchmark (default=on).
+--no-benchmark-memory        | Disable axpy memory benchmark.
+--benchmark-su4              | Enable SU(4) memory benchmark (default=on).
+--no-benchmark-su4           | Disable SU(4) memory benchmark.
+--benchmark-comms            | Enable communications benchmark (default=on).
+--no-benchmark-comms         | Disable communications benchmark.
+--benchmark-flops            | Enable all Dirac Matrix Flops benchmarks (default=on).
+--no-benchmark-flops         | Disable all Dirac Matrix Flops benchmarks.
+--benchmark-flops-su4        | Enable SU(4) Dirac Matrix Flops benchmark (default=on).
+--no-benchmark-flops-su4     | Disable SU(4) Dirac Matrix Flops benchmark.
+--benchmark-flops-sp4-f      | Enable Sp(4) Dirac Matrix Flops benchmark (default=on).
+--no-benchmark-flops-sp4-f   | Disable Sp(4) Dirac Matrix Flops benchmark.
+--benchmark-flops-sp4-2as    | Enable Sp(4) Two-Index AntiSymmetric Dirac Matrix Flops benchmark (default=on).
+--no-benchmark-flops-sp4-2as | Disable Sp(4) Two-Index AntiSymmetric Dirac Matrix Flops benchmark.
+--benchmark-flops-fp64       | Enable FP64 Dirac Matrix Flops benchmarks (default=on).
+--no-benchmark-flops-fp64    | Disable FP64 Dirac Matrix Flops benchmarks.
+--benchmark-latency          | Enable point-to-point communications latency benchmark (default=off).
+--no-benchmark-latency       | Disable point-to-point communications latency benchmark.
+--benchmark-p2p              | Enable point-to-point communications bandwidth benchmark (default=off).
+--no-benchmark-p2p           | Disable point-to-point communications bandwidth benchmark.
+--check-wilson               | Enable Wilson Fermion correctness check (default=on).
+--no-check-wilson            | Disable Wilson Fermion correctness check.
+--pattern \<x.y.z.t\>        | Scales the local lattice dimensions by the factors in the string x.y.z.t. This allows the volume-per-node to be matched between systems with dfferent GPUs-per-node if desired.
+--max-L \<size\>             | Sets the maximum lattice size for the flops benchmarks. This must either be a power of 2, or 3 times a power of 2.
+
+It is intended that only the `--json-out` flag should be necessary for standard use cases of the benchmark. The 
 benchmarks are performed on a fixed set of problem sizes, and the Grid flag `--grid` will
-be ignored. The *Floating-point performace* benchmark can run on additional larger problems sizes as detailed in its subsection.
+be ignored. The *Floating-point performace* benchmark can run on additional larger problems sizes by specifying a valid `--max-L` flag.
 
 The resulting metrics are as follows. All data-size units are in base 2 
 (i.e. 1 kB = 1024 B) and flops are given in base 10 (i.e. 1 kB = 1000 B).
@@ -201,7 +267,12 @@ a "comparison point", which is the average of the L=24 and L=32 best domain-wall
 
 ### `Benchmark_IO`
 
-This benchmark tests the parallel I/O performance of Grid for both reading and writing, and compares this against the I/O performance of the C++ standard library. This benchmark is non-configurable and runs on a fixed set of problem sizes. Measurement results can be saved to a file with the `--json-out <file>` flag. All data-size units are in base 2 (i.e. kB = 1024 B).
+This benchmark tests the parallel I/O performance of Grid for both reading and writing, and compares this against the I/O performance of the C++ standard library. This benchmark is non-configurable and runs on a fixed set of problem sizes. Measurement results can be saved to a file with the `--json-out <file>` flag. All data-size units are in base 2 (i.e. kB = 1024 B). The benchmark flags are as follows:
+
+Flag | Result
+--|--
+--help                       | Display all benchmark CLI flags and Grid CLI flags.
+--json-out \<file\>          | Save the measurement results in JSON format to `<file>`.
 
 The benchmark repeats 10 times. On each pass, the benchmark will:
 1) Write a Grid structure to disk using `std::ofstream` using one file per process,
