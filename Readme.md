@@ -199,6 +199,48 @@ Here "best" means the best result across the different implementations of the ro
 Please see the benchmark log for a detailed breakdown. Finally, the JSON output contains
 a "comparison point", which is the average of the L=24 and L=32 best domain-wall (`"Gflops_dwf4"`) single-precision performances.
 
+*Peer-to-Peer latency*
+
+This sub-benchmark is disabled by default and can be enabled with the `--benchmark-latency` CLI argument. A very small payload is transferred between every possible pair of MPI ranks to measure the communications latency between all ranks. The JSON entries under `"latency"` have the form:
+```json
+{
+  "from": 0,               // The MPI rank sending data
+  "to":   1,               // The MPI rank receiving data
+  "time_usec": ...,        // The mean latency (microseconds)
+  "time_usec_error": ...,  // The standard deviation of the latency (microseconds)
+  "time_usec_min": ...,    // The smallest measured latency (microseconds)
+  "time_usec_max": ...,    // The largest measured latency (microseconds)
+  "time_usec_full": [...]  // All latency timings (microseconds)
+}
+```
+
+*Peer-to-Peer bandwidth*
+
+This sub-benchmark is disabled by default and can be enabled with the `--benchmark-p2p` CLI argument. A very large payload is transferred between every possible pair of MPI ranks to measure the communications bandwidth between all ranks. The JSON entries under `"p2p"` have the form:
+```json
+{
+  "from": 0,               // The MPI rank sending data
+  "to":   1,               // The MPI rank receiving data
+  "bytes": 127401984,      // The payload size (B)
+  "time_usec": ...,        // The mean transfer time (microseconds)
+  "time_usec_error": ...,  // The standard deviation of the transfer time (microseconds)
+  "time_usec_max": ...,    // The largest measured transfer time (microseconds)
+  "time_usec_min": ...,    // The smallest measured transfer time (microseconds)
+  "time_usec_full": [...], // All transfer time timings (microseconds)
+  "rate_GBps": ...
+}
+```
+The information about the transfer rate is separated to a sub-entry under `"rate_GBps"` with the following structure:
+```json
+{
+  "mean": ...,   // The mean transfer rate (GB/s)
+  "error": ...,  // The standard deviation of the transfer rate (GB/s)
+  "max": ...,    // The largest measured transfer rate (GB/s)
+  "min": ...     // The smallest measured transfer rate (GB/s)
+}
+```
+As is consistent with the data units in the other benchmarks, these data rates are in base 2 (1 kB = 1024 B).
+
 ### `Benchmark_IO`
 
 This benchmark tests the parallel I/O performance of Grid for both reading and writing, and compares this against the I/O performance of the C++ standard library. This benchmark is non-configurable and runs on a fixed set of problem sizes. Measurement results can be saved to a file with the `--json-out <file>` flag. All data-size units are in base 2 (i.e. kB = 1024 B).
