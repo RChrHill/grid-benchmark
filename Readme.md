@@ -1,6 +1,6 @@
 # Grid benchmarks
 
-This folder contains benchmarks for the [Grid](https://github.com/paboyle/Grid) library.
+This repository contains benchmarks for the [Grid](https://github.com/paboyle/Grid) library.
 The benchmarks can be summarised as follows.
 
 - `Benchmark_Grid`: This benchmark measures floating-point performance for various fermion
@@ -52,7 +52,7 @@ elements of the form
 Grid's dependencies are managed with [Pixi](https://pixi.sh/latest/) environments defined
 in the [`pixi.toml`](pixi.toml) file. The following environments are available:
 - `gpu-nvidia`: NVIDIA GPU Linux build
-- `gpu-amd`: AMD GPU Linux build (TODO)
+- `gpu-amd`: AMD GPU Linux build
 - `cpu-linux`: CPU Linux build with LLVM
 - `cpu-apple-silicon`: Apple Silicon build on macOS
 and one of these strings must be used as a value for `"pixi-env"` above.
@@ -125,7 +125,7 @@ Performance:
   --comms-overlap    : Overlap comms with compute
   --dslash-generic: Wilson kernel for generic Nc
   --dslash-unroll : Wilson kernel for Nc=3
-  --dslash-asm    : Wilson kernel for AVX512"
+  --dslash-asm    : Wilson kernel for AVX512
 ```
 In addition, there are flags that are undocumented by the help string:
 Flag | Result
